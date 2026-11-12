@@ -1,6 +1,6 @@
 // plain-gen-calls.test.mjs - a plain proc calling a generator proc (runtime.ts callGenFromPlain, driven in place)
 // returns, throws, sleeps, deletes src and nests as expected (the list of lines in `want` below); and `new` of a type
-// whose New() sleeps, from a plain proc, fails loudly. Runs this file once in a child process and checks what it saw.
+// whose New() sleeps, from a plain proc, fails loudly; a callee that sleeps under a plain proc is counted (rt.plainSleeps). Runs this file once in a child process and checks what it saw.
 // Usage (from web/, env loaded, after `npx tsc -p .` and `node tools/translate-tg.mjs`): node tests/plain-gen-calls.test.mjs
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
@@ -12,7 +12,7 @@ if (process.argv[2] !== "--child") {
 	const out = execFileSync(process.execPath, [import.meta.filename, "--child"], { encoding: "utf8", maxBuffer: 1 << 26 });
 	const lb = out.split("\n").filter((l) => /^[RE] /.test(l));
 	let fail = 0;
-	const want = ["ret:42", "sleep:null", "caught:Cannot execute null.boom()", "uncaught:9", "del:null", "nested:null", "inner-throw-caught:Cannot execute null.boom()", "woke:sleeper", "woke:nested", "after-del-src:1", "new-sleep-throws:1"];
+	const want = ["ret:42", "sleep:null", "caught:Cannot execute null.boom()", "uncaught:9", "del:null", "nested:null", "inner-throw-caught:Cannot execute null.boom()", "woke:sleeper", "woke:nested", "after-del-src:1", "new-sleep-throws:1", "plain-sleeps:2"];
 	for (const w of want) if (!lb.some((l) => l.startsWith("R " + w))) { fail++; console.log(`FAIL missing ${w}`); }
 	console.log(lb.join("\n"));
 	console.log(fail ? `plain-gen-calls: ${fail} FAILED` : `plain-gen-calls: OK (${lb.length} lines)`);
@@ -92,6 +92,7 @@ rt.override(newCaller, function (f) {
 	return 1;
 }, false);
 vm.call(caller, [], src);
+R("plain-sleeps:" + [...rt.plainSleeps.values()].reduce((a, b) => a + b, 0)); // the sleeper and the nested one: counted for the boot log
 try { vm.call(newCaller, [], src); R("new-sleep-throws:0"); } catch (e) { R("new-sleep-throws:" + (/slept under a plain proc's new/.test(e.message) ? 1 : "other " + e.message)); }
 for (let i = 0; i < 5; i++) vm.runTick();
 for (const l of out) console.log(l);

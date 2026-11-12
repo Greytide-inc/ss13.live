@@ -47,6 +47,7 @@ rt.type(7737, "/obj/item/clothing/suit/space/chronos", "/obj/item/clothing/suit/
 	activated: 0,
 	cooldowntime: 50,
 	teleporting: 0,
+	walker: null,
 	phase_timer_id: null,
 	name: "Chronosuit",
 	desc: "An advanced spacesuit equipped with time-bluespace teleportation and anti-compression technology",
@@ -104,8 +105,10 @@ rt.def("/obj/item/clothing/suit/space/chronos/proc/ui_action_click", function* u
 
 // chronosuit.dm:62
 rt.def("/obj/item/clothing/suit/space/chronos/proc/dropped", function* dropped(f: Frame) {
+	// tg_js: losing the suit switches it off, mid time-walk too (tg's deactivate() refused during a walk, so a dropped
+	// suit stayed on and its helmet stayed stuck to the head).
 	if (this.activated) {
-		yield* this.deactivate();
+		yield* this.deactivate(1);
 	}
 	yield* parent_proc();
 	return f.dot;
@@ -134,15 +137,20 @@ rt.def("/obj/item/clothing/suit/space/chronos/proc/emp_act", function* emp_act(f
 // chronosuit.dm:80
 rt.def("/obj/item/clothing/suit/space/chronos/proc/finish_chronowalk", function* finish_chronowalk(f: Frame, user: Value, to_turf: Value) {
 	let I: Value = null;
+	// tg_js: the one way a time-walk ends (each phase, deactivate, a lost suit or wearer). The suit is idle or walking
+	// (`teleporting`, with `walker` the mob mid-walk); this sets it idle first, whoever is left to restore (tg returned
+	// before clearing `teleporting` when the wearer was gone, so the suit never switched on again).
 	if (!user) {
-		user = this.loc;
+		user = this.walker || this.loc;
 	}
 	if (this.phase_timer_id) {
 		yield* deltimer(this.phase_timer_id);
 		this.phase_timer_id = 0;
 	}
+	this.teleporting = 0;
+	this.walker = null;
 	if (!rt.istype(user, T("/mob/living/carbon/human"))) return f.dot;
-	if (to_turf) {
+	if (to_turf && user.wear_suit == this) {
 		yield* user.forceMove(to_turf);
 	}
 	yield* user.SetStun(0);
@@ -152,7 +160,6 @@ rt.def("/obj/item/clothing/suit/space/chronos/proc/finish_chronowalk", function*
 	user.animate_movement = 1;
 	user.notransform = 0;
 	user.anchored = 0;
-	this.teleporting = 0;
 	for (I of each(user.held_items, T("/obj/item"))) {
 		if (rt.isIn(f, I, this.hands_nodrop)) {
 			(rt.modField(f, I, "flags", 16777213, rt.bitAnd));
@@ -172,6 +179,7 @@ rt.def("/obj/item/clothing/suit/space/chronos/proc/chronowalk", function* chrono
 	let user: Value = this.loc;
 	if (!(this.activated && !this.teleporting && user && rt.istype(user, T("/mob/living/carbon/human")) && location && user.loc && location.loc && user.wear_suit == this && user.stat == 0)) return f.dot;
 	this.teleporting = 1;
+	this.walker = user;
 	let from_turf: Value = rt.getStep(f, user, 0);
 	let to_turf: Value = rt.getStep(f, location, 0);
 	let distance: Value = cheap_hypotenuse(from_turf.x, from_turf.y, to_turf.x, to_turf.y);

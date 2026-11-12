@@ -374,39 +374,45 @@ rt.def("/obj/machinery/autolathe/proc/Topic", function* Topic(f: Frame, href: Va
 
 // a spawn(multiply(multiply(32, live(coeff)), live(multiplier))) body of /obj/machinery/autolathe/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/autolathe/proc/Topic: spawn at game/machinery/autolathe.dm:230", function* (f: Frame, _T: Value, multiplier: Value, is_stack: Value, coeff: Value, metal_cost: Value, glass_cost: Value, power: Value, materials_used: Value, N: Value, S: Value, i: Value, new_item: Value, mat: Value, v: Value, D: Value) {
-	yield* this.use_power(power);
-	materials_used = rt.alist(f, ["$metal", metal_cost * coeff * multiplier, "$glass", glass_cost * coeff * multiplier]);
-	this.materials.use_amount(materials_used);
-	i = null;
-	i = 1;
-	while (i <= multiplier) {
-		new_item = (yield* new_(this.being_built.build_path, _T));
-		mat = null;
-		for (mat of each(materials_used)) {
-			rt.setAt(new_item.materials, mat, rt.index(materials_used, mat) / multiplier);
+	try { // busy is cleared even if the build errors (tg: the lathe then said "busy" until rebuilt)
+		yield* this.use_power(power);
+		materials_used = rt.alist(f, ["$metal", metal_cost * coeff * multiplier, "$glass", glass_cost * coeff * multiplier]);
+		this.materials.use_amount(materials_used);
+		i = null;
+		i = 1;
+		while (i <= multiplier) {
+			new_item = (yield* new_(this.being_built.build_path, _T));
+			mat = null;
+			for (mat of each(materials_used)) {
+				rt.setAt(new_item.materials, mat, rt.index(materials_used, mat) / multiplier);
+			}
+			new_item.autolathe_crafted(this);
+			i++;
 		}
-		new_item.autolathe_crafted(this);
-		i++;
+	} finally {
+		this.busy = 0;
 	}
-	this.busy = 0;
 	yield* this.updateUsrDialog(); GLOB.SStgui.update_uis(this);
 	return null;
 });
 
 // a spawn(multiply(32, live(coeff))) body of /obj/machinery/autolathe/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/autolathe/proc/Topic: spawn at game/machinery/autolathe.dm:214", function* (f: Frame, _T: Value, multiplier: Value, is_stack: Value, coeff: Value, metal_cost: Value, glass_cost: Value, power: Value, materials_used: Value, N: Value, S: Value, i: Value, new_item: Value, mat: Value, v: Value, D: Value) {
-	yield* this.use_power(power);
-	materials_used = rt.alist(f, ["$metal", metal_cost * multiplier, "$glass", glass_cost * multiplier]);
-	this.materials.use_amount(materials_used);
-	yield* (N = (yield* new_(this.being_built.build_path, _T, multiplier))).update_icon();
-	N.autolathe_crafted(this);
-	S = null;
-	for (S of each(_T.contents - N, T("/obj/item/stack"))) {
-		if (rt.op(f, "IsType", [], [S, N.merge_type])) {
-			yield* N.merge(S);
+	try { // busy is cleared even if the build errors (tg: the lathe then said "busy" until rebuilt)
+		yield* this.use_power(power);
+		materials_used = rt.alist(f, ["$metal", metal_cost * multiplier, "$glass", glass_cost * multiplier]);
+		this.materials.use_amount(materials_used);
+		yield* (N = (yield* new_(this.being_built.build_path, _T, multiplier))).update_icon();
+		N.autolathe_crafted(this);
+		S = null;
+		for (S of each(_T.contents - N, T("/obj/item/stack"))) {
+			if (rt.op(f, "IsType", [], [S, N.merge_type])) {
+				yield* N.merge(S);
+			}
 		}
+	} finally {
+		this.busy = 0;
 	}
-	this.busy = 0;
 	yield* this.updateUsrDialog(); GLOB.SStgui.update_uis(this);
 	return null;
 });

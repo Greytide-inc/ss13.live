@@ -236,7 +236,7 @@ rt.def("/obj/item/clothing/suit/armor/reactive/teleport/proc/hit_reaction", func
 			owner.visible_message(`<span class='danger'>The reactive teleport system is still recharging! It fails to teleport ${H}!</span>`);
 			return f.dot;
 		}
-		owner.visible_message(`<span class='danger'>The reactive teleport system flings ${H} clear of ${attack_text}, shutting itself off in the process!</span>`);
+		owner.visible_message(`<span class='danger'>The reactive teleport system flings ${H} clear of ${attack_text}!</span>`);
 		turfs = (yield* new_(T("/list")));
 		for (_T of each(orange(this.tele_range, H), T("/turf"))) {
 			if (_T.density) {

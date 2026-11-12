@@ -41,6 +41,9 @@ const info=()=>P({info:{tg:(()=>{try{return window.tgui?JSON.stringify({config:w
 let lt=null;const tt=()=>{if(document.title!==lt)P({title:lt=document.title})};setInterval(tt,300);
 addEventListener("message",(e)=>{const d=e.data;if(!d||e.source!==parent)return;if(d.geo){G=d.geo}else if(d.fn){const f=window[d.fn];if(typeof f==="function")f(...(d.args||[d.arg]))}else if(d.q)info()});
 })()<\/script>`;
+// A runtime icon a browse waits for is waiting, then arrived, failed (rsc_png with png null: the worker couldn't render it) or
+// given up after this long (its rsc_png was lost): the browse opens without it. Before, one icon that never came held every later popup until a reload.
+export const PNG_GIVE_UP_MS = 3000;
 const noNav = (t) => t.replace(/window\.location\.href\s*=(?!=)/g, "window.__go=");
 
 export function createPopups({ host, send }) {
@@ -83,12 +86,12 @@ export function createPopups({ host, send }) {
 		else if (/^(byond:\/\/|\?)/i.test(href)) send({ type: "topic", href });
 	};
 	const pngWait = new Map();
-	const rscPng = async (m) => { rscUrl.set(m.name, await dataUrl(m.png, "png")); (pngWait.get(m.name) ?? []).splice(0).forEach((ok) => ok()); };
+	const rscPng = async (m) => { if (m.png) rscUrl.set(m.name, await dataUrl(m.png, "png")); (pngWait.get(m.name) ?? []).splice(0).forEach((ok) => ok()); };
 	const rsc = (m) => {
 		if (typeof m.file !== "string") return; // not a file or icon: not modelled
 		const name = m.name ?? m.file.split(/[\\/]/).pop();
 		if (m.pendingPng) { // a runtime icon (character preview): the next browse waits until its PNG arrives (rscPng), and it replaces any earlier one of that name
-			const p = new Promise((ok) => (pngWait.get(name)?.push(ok) ?? pngWait.set(name, [ok])));
+			const p = new Promise((ok) => { pngWait.get(name)?.push(ok) ?? pngWait.set(name, [ok]); setTimeout(() => { const l = pngWait.get(name), i = l?.indexOf(ok) ?? -1; if (i >= 0) { l.splice(i, 1); console.warn("browse_rsc: gave up waiting for", name); ok(); } }, PNG_GIVE_UP_MS); });
 			pending.add(p); p.finally(() => pending.delete(p));
 			return;
 		}

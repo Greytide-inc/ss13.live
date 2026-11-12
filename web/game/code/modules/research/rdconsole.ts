@@ -140,19 +140,32 @@ rt.def("/obj/machinery/computer/rdconsole/proc/attackby", function* attackby(f: 
 
 // rdconsole.dm:141
 rt.def("/obj/machinery/computer/rdconsole/proc/on_deconstruction", function on_deconstruction(f: Frame) {
-	if (this.linked_destroy) {
-		this.linked_destroy.linked_console = null;
+	this.unlink_device("destroy");
+	this.unlink_device("lathe");
+	this.unlink_device("imprinter");
+	parent_proc();
+	return f.dot;
+});
+
+// tg_js: the one way the console lets go of a linked machine (Disconnect, deconstruction). A machine is idle or busy with
+// this console's job; letting go cancels the job, so the machine goes back to idle (tg left `busy` set, and the job's end,
+// finding no link, never cleared it: the machine refused all use for the rest of the round).
+rt.def("/obj/machinery/computer/rdconsole/proc/unlink_device", function unlink_device(f: Frame, which: Value) {
+	let D: Value = null;
+	if (which === "destroy") {
+		D = this.linked_destroy;
 		this.linked_destroy = null;
-	}
-	if (this.linked_lathe) {
-		this.linked_lathe.linked_console = null;
+	} else if (which === "lathe") {
+		D = this.linked_lathe;
 		this.linked_lathe = null;
-	}
-	if (this.linked_imprinter) {
-		this.linked_imprinter.linked_console = null;
+	} else if (which === "imprinter") {
+		D = this.linked_imprinter;
 		this.linked_imprinter = null;
 	}
-	parent_proc();
+	if (D) {
+		D.busy = 0;
+		D.linked_console = null;
+	}
 	return f.dot;
 });
 
@@ -458,17 +471,7 @@ rt.def("/obj/machinery/computer/rdconsole/proc/Topic", function* Topic(f: Frame,
 		this.screen = 0;
 		rt.spawnTail(f, 20, "/obj/machinery/computer/rdconsole/proc/Topic: spawn at modules/research/rdconsole.dm:553", temp_screen, n, wait, D, tech, i, slot, _T, D_1, autolathe_friendly, x, temp_tech, cancontinue, _T_2, choice, KT, material, I, M, S, S_0, server_processed, v, _T_3, D_3, being_built, amount, coeff, power, old_screen, M_5, key, g2g, enough_materials, efficient_mats, MAT, R, _P, already_logged, i_11, new_item, coeff_1, power_2, old_screen_3, M_4, g2g_4, enough_materials_5, efficient_mats_6, MAT_7, R_7, _P_7, new_item_8, choice_0, compare, v_1);
 	} else if (rt.at(href_list, "disconnect")) {
-		const item = rt.at(href_list, "disconnect");
-		if (item === "destroy") {
-			this.linked_destroy.linked_console = null;
-			this.linked_destroy = null;
-		} else if (item === "lathe") {
-			this.linked_lathe.linked_console = null;
-			this.linked_lathe = null;
-		} else if (item === "imprinter") {
-			this.linked_imprinter.linked_console = null;
-			this.linked_imprinter = null;
-		}
+		this.unlink_device(rt.at(href_list, "disconnect"));
 	} else if (rt.at(href_list, "reset")) {
 		yield* this.griefProtection();
 		if ((choice_0 = (yield* alert("R&D Console Database Reset", "Are you sure you want to reset the R&D console's database? Data lost cannot be recovered.", "Continue", "Cancel"))) == "Continue" && f.usr.canUseTopic(this)) {

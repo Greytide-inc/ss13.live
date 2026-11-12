@@ -23,7 +23,7 @@
 //                 message below may carry `player` (a ckey, "localplayer" for the page's own); none = the first player, so the current page
 //                 sends none. Every worker -> page message for one player (view, output, dialog, menu, stat, sound, browse, browse_rsc,
 //                 rsc_png, popout, popwinset) carries `player` too; log/milestone/done/reboot/file are for everyone. All plain JSON except
-//                 rsc_png.png (a Uint8Array) and runtime icons in a view update (blob: URLs made in the worker, valid only on its side of
+//                 rsc_png.png (a Uint8Array, null when the render failed) and runtime icons in a view update (blob: URLs made in the worker, valid only on its side of
 //                 the wire: a network version has to send the .dmi bytes). Test aid: start.second = "KEY" (+ secondJob) adds a second client.
 // Worker -> page: { type: "log", line }         one world.log / [vm-boot] line, as boot.ts writes them
 //                 { type: "milestone", name, s } "loaded", "world-new", "round-start", "stopped" (s = wall seconds)
@@ -60,7 +60,8 @@ import { makeTickAids } from "./tick-aids.js";
 import { makeRunStats } from "./run-stats.js";
 import { loadWorld } from "./load-world.js";
 import { installInput, mouseSeen, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState, type Player, type ClickMsg, type MenuMsg, type MenuPickMsg, type MouseMsg } from "./input.js";
-import { holdLobby, readyAtRoundStart, restoreJobPrefs } from "./test-aids.js";
+import { holdLobby, releaseLobby, readyAtRoundStart, restoreJobPrefs } from "./test-aids.js";
+import { Joins, ckeyOf } from "./joins.js";
 import { parseDmiBytes } from "../dmi/dmi-browser.js";
 import { decodePng, pngIdat } from "../dmi/png.js";
 import { type IconImage, iconFromSheet } from "../dmi/icon-ops.js";
@@ -239,7 +240,7 @@ let lastMouseVars = "", mouseVarLogs = 0;
 let freshAsk: { id: string; tgui?: string; tguiSet?: string; tguiWatch?: string } | null = null; // the host asked for a fresh --tgui machine (topic-check --again --fresh), with the scenario's amount, set and watch values as they are now; the tick loop does it
 let onHot: ((m: HotMsg) => void) | null = null; // the host replaces game procs in the running world (tools/hot.mjs)
 export interface HotMsg { type: "hot"; id: string; fresh?: boolean; tgui?: string; tguiSet?: string; tguiWatch?: string; files: { file: string; js: string; firstId: number; paths: string[] }[] }
-const connectQ: { key: string; job: string; near?: boolean; address?: string }[] = [], disconnectQ: string[] = []; // multiplayer: {type:"connect", key, job?} / {type:"disconnect", key}: run by the tick loop
+let joins = new Joins("localplayer"); // who comes in and when (joins.ts): {type:"connect", key, job?} / {type:"disconnect", key}, run by the tick loop; a new one per start
 let inputAt: number | null = null; // when the oldest page input not yet run by a tick arrived (performance.now())
 type InMsg =
 	| StartMsg
@@ -277,8 +278,8 @@ function handleMessage(m: InMsg): void {
 	if (m.type === "stop") stopRequested = true;
 	else if (m.type === "loglevel") { const l = asLevel(m.level); if (l) { logLevel = l; post({ type: "log", line: `[vm-boot] log level now ${l}` }); } }
 	else if (m.type === "resync") resyncRequested.add(((m as { player?: string }).player ?? "").toLowerCase());
-	else if (m.type === "connect") connectQ.push({ key: m.key, job: m.job ?? "Assistant", near: m.near, address: m.address });
-	else if (m.type === "disconnect") disconnectQ.push(m.key);
+	else if (m.type === "connect") joins.connect({ key: m.key, job: m.job ?? "Assistant", near: m.near, address: m.address });
+	else if (m.type === "disconnect") joins.disconnect(m.key);
 	else if (m.type === "key") onKey?.(m.key, m.down, pl);
 	else if (m.type === "step") onStep?.(m.dir, pl);
 	else if (m.type === "command") onCommand?.(m.text, m.speech, pl);
@@ -294,7 +295,7 @@ function handleMessage(m: InMsg): void {
 	else if (m.type === "mouse") onMouse?.(m);
 	else if (m.type === "bugstate") onBugState?.(pl);
 	else if (m.type === "hot") { if (onHot) onHot(m); else post({ type: "hotResult", id: m.id, ok: false, lines: ["the world isn't up yet (or the server wasn't started with --hot)"] }); }
-	else if (m.type === "start") void run(m).catch((err) => post({ type: "log", line: `[vm-boot] worker FATAL: ${(err as Error).stack ?? err}` }));
+	else if (m.type === "start") { joins = new Joins(ckeyOf(m.playerKey ?? "LocalPlayer")); void run(m).catch((err) => post({ type: "log", line: `[vm-boot] worker FATAL: ${(err as Error).stack ?? err}` })); }
 };
 
 async function run(opts: StartMsg): Promise<void> {
@@ -432,7 +433,7 @@ async function run(opts: StartMsg): Promise<void> {
 			post({ type: "milestone", name: "world-new", s: Number(secs()) });
 		}
 		let lastYield = Date.now();
-				let joinAt = Infinity, joinTick: number | null = null, genderClickAt = -1, joined = false, connected = false, lastPos = "", lastState = "";
+				let joinAt = Infinity, joinTick: number | null = null, genderClickAt = -1, lastPos = "", lastState = "";
 		// one record per connected player. Input names its player by ckey (none = the first); output is routed by the ckey the engine tags it with.
 		const players: Player[] = [];
 		const early = new Map<string, string[]>(); // text sent to a client while it connects, before its record exists
@@ -450,9 +451,18 @@ async function run(opts: StartMsg): Promise<void> {
 		let secondAt = -1, secondJoinTick = -1, secondP: Player | null = null, lastPlayersLog = Date.now(); // mp1 test aid (?second=KEY[&secondjob=JOB]): a second client
 		const firstC = (): DMObject => players[0]?.client as DMObject; // the test aids below act on the first player
 				const aids = makeTickAids({ opts, vm, log, post, firstC, players, get joinAt() { return joinAt; }, get ticks() { return ticks; }, get freshAsk() { return freshAsk; }, set freshAsk(v) { freshAsk = v; } });
+		// the first player's way in is joins.mode (joins.ts); isJoined: the first join is settled (in, or gone), so the world runs for players
+		const isJoined = () => joins.open;
+		/** The first player is refused or left before joining: later players come in, with real time and no held lobby. */
+		const firstGone = (why: string) => {
+			joins.firstGone(); joinTick = null;
+			if (lobbyMode || roundstartJoin) { lobbyPaced = true; pace.wall = Date.now(); pace.tick = vm.sched.tick; }
+			if (roundstartJoin) releaseLobby(vm);
+			log(`[vm-boot] first player ${playerKey} ${why}: later players come in without them, world.time ${vm.sched.time}`);
+		};
 		let lastCheck = 0;
 		let idle = false; // netcode 1: between ticks (the VM is not running anything), so a click can run at once
-		installInput({ opts, vm, log, post, inLog, cutAt, get logLevel() { return logLevel; }, players, early, playerOf, by, pixels, fetchPixels, normPath, fixAppIcons, resyncRequested, lateWakes, get joined() { return joined; }, get idle() { return idle; } });
+		installInput({ opts, vm, log, post, inLog, cutAt, get logLevel() { return logLevel; }, players, early, playerOf, by, pixels, fetchPixels, normPath, fixAppIcons, resyncRequested, lateWakes, get joined() { return isJoined(); }, get idle() { return idle; } });
 		while (ticks < maxTicks && Date.now() < deadline() && !stopRequested) {
 			const due = vm.nextDue();
 			if (due === null) break;
@@ -469,7 +479,7 @@ async function run(opts: StartMsg): Promise<void> {
 			const tt = performance.now();
 			vm.sched.skipTicks(due - vm.sched.tick - 1);
 			if (inputAt !== null) { const w = tt - inputAt; inputAt = null; live_.inN++; live_.inWait += w; live_.inMax = Math.max(live_.inMax, w); }
-			if (joined) vm.clients.runInput(); else vm.clients.runAssetConfirms();
+			if (isJoined()) vm.clients.runInput(); else vm.clients.runAssetConfirms();
 			if (scenarioPlayer && scenarioStart >= 0) { try { scenarioPlayer.step(ticks - scenarioStart); } catch (e) { log(`[scenario] ${scenarioName}: script stopped: ${(e as Error).message}`); scenarioPlayer = null; } }
 			vm.runTick();
 			ticks++;
@@ -500,32 +510,36 @@ async function run(opts: StartMsg): Promise<void> {
 				live_.ticks++; live_.vmMs += ms; if (ms > live_.maxTick) live_.maxAt = vm.sched.time; live_.maxTick = Math.max(live_.maxTick, ms); live_.ms.push(ms);
 				if (ms > vm.sched.tickLag * 100) { live_.slow++; if (ms > 200) log(`[vm-boot] long tick ${ms.toFixed(0)} ms at world.time ${vm.sched.time}, heap ${heapMB()} MB`); }
 			}
-			if (lobbyMode && !connected && initDone) { // the player arrives in the lobby; real time runs from here
-				connected = true;
+			// the world is ready for the first player: read the messages that came during the boot first (the loop has not yielded since),
+			// so a player who left or came meanwhile is known before anyone is let in
+			if (joins.mode === "waiting" && (lobbyMode ? initDone : !!joinJob && (roundstartJoin ? initDone : roundStart !== null))) await new Promise((r) => setTimeout(r, 1));
+			if (lobbyMode && joins.mode === "waiting" && initDone) { // the player arrives in the lobby; real time runs from here
+				const fm = joins.firstArrives(), c = fm === "setup" ? vm.clients.connect(playerKey, { address: opts.playerAddress }) : null;
 				vm.animLog = [];
-				const c = vm.clients.connect(playerKey, { address: opts.playerAddress });
-				log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time} (lobby)`);
+				if (fm === "gone") firstGone("left before the world was ready");
+				else log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time} (lobby)`);
+				if (!c && fm === "setup") firstGone("was refused");
 				if (c) {
 					addPlayer(playerKey, c).joined = true;
-					joined = true; lobbyPaced = true; pace.wall = Date.now(); pace.tick = vm.sched.tick;
+					joins.firstIn(); lobbyPaced = true; pace.wall = Date.now(); pace.tick = vm.sched.tick;
 					const gi = vm.tree.globalNames.indexOf("SSticker"), tk = gi >= 0 ? live(vm.globals[gi]) : null;
 					if (tk instanceof DMObject && opts.lobbySeconds) { tk.setVar("start_at", vm.sched.time + opts.lobbySeconds * 10); if (tk.getVar("timeLeft") != null) tk.setVar("timeLeft", opts.lobbySeconds * 10); }
 					post({ type: "milestone", name: "lobby", s: Number(secs()) });
 				}
 			}
-			if (opts.autojoin && lobbyMode && connected && !spawned && !autojoined && roundStart !== null && ticks >= (roundStart as { ticks: number }).ticks + 20) {
+			if (opts.autojoin && lobbyMode && joins.mode === "in" && !spawned && !autojoined && roundStart !== null && ticks >= (roundStart as { ticks: number }).ticks + 20) {
 				// Test aid: ?autojoin=JOB clicks the lobby's late-join link for JOB (the Topic the "Join Game!" window's job link sends)
 				autojoined = true;
 				const c = firstC();
 				if (c) { vm.clients.topic(c, `src=${refOf(c.getVar("mob"))};SelectedJob=${opts.autojoin}`); log(`[vm-boot] autojoin: late-join link for ${opts.autojoin} clicked at world.time ${vm.sched.time}`); }
 			}
-			if (joinJob && !connected && (roundstartJoin ? initDone : roundStart !== null)) {
-				connected = true;
-				if (roundstartJoin) holdLobby(vm); // hold the lobby countdown until the player is Ready
+			if (joinJob && joins.mode === "waiting" && (roundstartJoin ? initDone : roundStart !== null)) {
+				const fm = joins.firstArrives(), c = fm === "setup" ? vm.clients.connect(playerKey, { address: opts.playerAddress }) : null;
 				vm.animLog = []; // record animate()/flick() from now on (the view differ drains it)
-				const c = vm.clients.connect(playerKey, { address: opts.playerAddress });
-				log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-				if (c) { addPlayer(playerKey, c); joinTick = ticks + 20; }
+				if (fm === "gone") firstGone("left before the world was ready");
+				else log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
+				if (c) { addPlayer(playerKey, c); joinTick = ticks + 20; if (roundstartJoin) holdLobby(vm); } // hold the lobby countdown until the player is Ready
+				else if (fm === "setup") firstGone("was refused");
 			}
 			if (joinTick !== null && ticks >= joinTick) {
 				const c = firstC();
@@ -552,16 +566,19 @@ async function run(opts: StartMsg): Promise<void> {
 						log(`[vm-boot] joined as ${joinJob}: mob ${mob instanceof DMObject ? mob.type.path : "null"} gender ${mob instanceof DMObject ? String(mob.getVar("gender")) : "?"} at ${secs()} s wall, world.time ${vm.sched.time}`);
 						post({ type: "milestone", name: "joined", s: Number(secs()) });
 					}
-					joined = true; players[0]!.joined = true;
+					joins.firstIn(); players[0]!.joined = true;
 				}
 			}
 			// Multiplayer: players that connect and leave while the round runs (tools/server.mjs sends connect / disconnect per WebSocket)
-			while (disconnectQ.length) {
-				const ck = disconnectQ.shift()!.toLowerCase().replace(/[^a-z0-9@]/g, ""), P = players.find((x) => x.ckey === ck);
-				if (P) { players.splice(players.indexOf(P), 1); vm.clients.drop(P.client); log(`[vm-boot] client ${P.key} disconnected (mob stays), ${players.length} players left`); }
+			for (const ck of joins.takeCancelled()) { vm.clients.send(ck, { type: "disconnect" }); log(`[vm-boot] client ${ck} left before coming in: not connected`); }
+			for (const ck of joins.takeLeaving()) {
+				const P = players.find((x) => x.ckey === ck);
+				if (!P) continue;
+				const wasFirst = P === players[0] && joins.mode === "setup"; // left in the join wait
+				players.splice(players.indexOf(P), 1); vm.clients.drop(P.client); log(`[vm-boot] client ${P.key} disconnected (mob stays), ${players.length} players left`);
+				if (wasFirst) firstGone("left before joining");
 			}
-			if (connected && joined) while (connectQ.length) {
-				const { key, job, near, address } = connectQ.shift()!, ck = key.toLowerCase().replace(/[^a-z0-9@]/g, "");
+			for (const { key, job, near, address, ckey: ck } of joins.takeArrivals()) {
 				if (players.some((x) => x.ckey === ck)) { log(`[vm-boot] client ${key} refused: already connected`); continue; }
 				const c2 = vm.clients.connect(key, { address });
 				log(`[vm-boot] client ${key} ${c2 ? `connected, mob ${(c2.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
@@ -582,7 +599,7 @@ async function run(opts: StartMsg): Promise<void> {
 				log(`[vm-boot] client ${P.key} late-joined as ${job}: mob ${mob instanceof DMObject ? mob.type.path : "null"} at ${secs()} s wall, world.time ${vm.sched.time}`);
 			}
 			if (opts.second) { // mp1 test aid: ?second=KEY connects a second client 60 ticks after the first one joined, which late-joins as ?secondjob (default Assistant) 20 ticks later
-				if (joined && secondAt < 0) secondAt = ticks + 60;
+				if (isJoined() && secondAt < 0) secondAt = ticks + 60;
 				if (secondAt >= 0 && !secondP && ticks >= secondAt) {
 					const c2 = vm.clients.connect(opts.second);
 					log(`[vm-boot] second client ${opts.second} ${c2 ? `connected, mob ${(c2.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
@@ -600,12 +617,12 @@ async function run(opts: StartMsg): Promise<void> {
 					log(`[vm-boot] players: ${players.map((p) => `${p.ckey} mob ${(live(p.client.getVar("mob")) as DMObject | null)?.type?.path ?? "null"} views ${p.views} output ${p.outCount}`).join(" | ")}`);
 				}
 			}
-			if (joined && players.length && Object.keys(mouseSeen).length) { // what tg's client/MouseMove and MouseDrag stored (autoclick.dm), the first few changes
+			if (isJoined() && players.length && Object.keys(mouseSeen).length) { // what tg's client/MouseMove and MouseDrag stored (autoclick.dm), the first few changes
 				const cl = firstC(), mo = live(cl?.getVar("mouseObject")), ml = live(cl?.getVar("mouseLocation"));
 				const ms = `mouseParams ${stringify(cl?.getVar("mouseParams"))} mouseObject ${mo instanceof DMObject ? mo.type.path : "-"} mouseLocation ${ml instanceof DMObject ? ml.type.path : "-"}`;
 				if (ms !== lastMouseVars && mouseVarLogs++ < 8) log(`[vm-boot] client ${(lastMouseVars = ms)}, world.time ${vm.sched.time}`);
 			}
-			if (joined) {
+			if (isJoined()) {
 				// Where the player is, whenever it changes (the walking check reads these lines).
 				const mob = live(firstC()?.getVar("mob"));
 				if ((lobbyMode || roundstartJoin) && !spawned && mob instanceof DMObject && !mob.type.path.includes("new_player")) {
@@ -621,7 +638,7 @@ async function run(opts: StartMsg): Promise<void> {
 					if (st !== lastState) log(`[vm-boot] player state ${(lastState = st)}, world.time ${vm.sched.time}`);
 				}
 			}
-			if (joined) {
+			if (isJoined()) {
 				// the view's changes since the last tick (a full view first, and after a page resync).
 				aids.step(); // the per-tick test aids (tick-aids.ts)
 				const evs = vm.animLog ? vm.animLog.slice() : null; // each player's differ drains the animation log: give each the same events

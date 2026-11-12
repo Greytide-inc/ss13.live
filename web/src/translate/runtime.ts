@@ -1003,6 +1003,7 @@ function callGenFromPlain(f: Frame, proc: DMProc, fn: GenFn, src: Value, args: V
 	}
 	if (!done) {
 		if (fromNew) throw new Error(`${proc.path} slept under a plain proc's new (the caller must be a generator: g.new_)`); // fail loudly, not silently misordered
+		if (err === null && f2.waitfor) { const k = `${f.proc.path} > ${proc.path}`; plainSleeps.set(k, (plainSleeps.get(k) ?? 0) + 1); } // DM's caller would have waited; this one carries on
 		// The VM takes over: the frame's generator ends with its `.` on an EndProc (VM.endTop), as entryGen's does.
 		const w = new EntryCall(f2, it) as unknown as Gen;
 		for (const fr2 of t.frames) if (fr2.gen === it) fr2.gen = w;
@@ -1010,6 +1011,9 @@ function callGenFromPlain(f: Frame, proc: DMProc, fn: GenFn, src: Value, args: V
 	}
 	return tempDone(f, t, fr, f2);
 }
+/** "caller > callee": a plain proc's callee (not `set waitfor = 0`) really slept, so the caller carried on where DM's would have
+ * waited (callGenFromPlain). The bundler can't see these (it matches calls by name): boot.ts lists them at the end. */
+export const plainSleeps = new Map<string, number>();
 /** finished temporary threads (empty) and their stand-in frames, for callGenFromPlain (most never sleep). */
 const tempThreads: Thread[] = [];
 const tempFrames: Frame[] = [];

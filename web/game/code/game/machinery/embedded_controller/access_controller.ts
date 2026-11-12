@@ -259,8 +259,10 @@ rt.def("/obj/machinery/doorButtons/airlock_controller/proc/cycleClose", function
 
 // access_controller.dm:194
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/cycleOpen", function* cycleOpen(f: Frame, A: Value) {
+	// tg went idle on a missing door but carried on into openDoor(null): a runtime error that left the console busy all round.
 	if (!A) {
 		yield* this.goIdle(1);
+		return f.dot;
 	}
 	if (A == this.exteriorAirlock) {
 		if (this.interiorAirlock) {

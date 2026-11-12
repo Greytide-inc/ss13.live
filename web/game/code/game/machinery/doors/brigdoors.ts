@@ -83,6 +83,18 @@ rt.def("/obj/machinery/door_timer/proc/process", function* process(f: Frame) {
 // brigdoors.dm:81
 rt.def("/obj/machinery/door_timer/proc/power_change", function power_change(f: Frame) {
 	parent_proc();
+	// A running timer is counting (activation_time set) or paused (activation_time null, timer_duration = the time left).
+	// tg kept counting with no power, so a power cut ate the sentence.
+	if (this.timing) {
+		if (rt.bitAnd(this.stat, 2)) {
+			if (this.activation_time) {
+				this.timer_duration = this.time_left();
+				this.activation_time = null;
+			}
+		} else if (!this.activation_time) {
+			this.activation_time = rt.worldTime(f);
+		}
+	}
 	this.update_icon();
 	return f.dot;
 });
@@ -164,6 +176,16 @@ rt.def("/obj/machinery/door_timer/proc/set_timer", function set_timer(f: Frame, 
 	let new_time: Value = null;
 	f.dot = ((new_time = max(0, min(value, 9000))) == this.timer_duration ? 1 : 0);
 	this.timer_duration = new_time;
+	return f.dot;
+});
+
+// tg_js: the "time" button. tg set the length to time left + value but kept activation_time, so the time already
+// served came off twice; the clock restarts from now, as the preset buttons already did.
+rt.def("/obj/machinery/door_timer/proc/adjust_time", function adjust_time(f: Frame, value: Value) {
+	f.dot = this.set_timer(this.time_left() + value);
+	if (this.timing && this.activation_time) {
+		this.activation_time = rt.worldTime(f);
+	}
 	return f.dot;
 });
 
@@ -251,7 +273,7 @@ rt.def("/obj/machinery/door_timer/proc/ui_act", function* ui_act(f: Frame, actio
 	}
 	if (action === "time") {
 		if (value = text2num(rt.at(params, "adjust"))) {
-			f.dot = this.set_timer(this.time_left() + value);
+			f.dot = this.adjust_time(value);
 		}
 	} else if (action === "start") {
 		yield* this.timer_start();

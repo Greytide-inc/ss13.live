@@ -10,41 +10,41 @@ const FLOOR = [
 	["build/dist runtime import", /build\/dist\/src\/translate\/runtime\.js/g, 0],
 	["full rt destructure", /^const \{ T, P, g, truthy, isEqual, add, subtract, multiply, divide, fmt \} = rt;$/gm, 0],
 	// defines (step 4): the bit calls stay calls (DM's are 16-bit), only their numbers got names
-	["rt.bitAnd(", /\brt\.bitAnd\(/g, 1735],
-	["rt.bitOr(", /\brt\.bitOr\(/g, 102],
+	["rt.bitAnd(", /\brt\.bitAnd\(/g, 1726],
+	["rt.bitOr(", /\brt\.bitOr\(/g, 101],
 	// step 5, types
-	["rt.istype(", /\brt\.istype\(/g, 5976],
-	['T("/...")', /\bT\("\//g, 24154],
+	["rt.istype(", /\brt\.istype\(/g, 5953],
+	['T("/...")', /\bT\("\//g, 24088],
 	// step 6, lists
-	["rt.index(", /\brt\.index\(/g, 4175],
-	["rt.setAt(", /\brt\.setAt\(/g, 2548],
-	["rt.at(", /\brt\.at\(/g, 2496],
-	["rt.isIn(", /\brt\.isIn\(/g, 1297],
+	["rt.index(", /\brt\.index\(/g, 4050],
+	["rt.setAt(", /\brt\.setAt\(/g, 2532],
+	["rt.at(", /\brt\.at\(/g, 2494],
+	["rt.isIn(", /\brt\.isIn\(/g, 1292],
 	// step 7, engine helpers
-	["rt.getStep(", /\brt\.getStep\(/g, 2366],
-	["rt.worldTime", /\brt\.worldTime\b/g, 993],
-	["rt.world()", /\brt\.world\(\)/g, 940],
-	["rt.locateIn(", /\brt\.locateIn\(/g, 622],
-	["rt.op(", /\brt\.op\(/g, 1286],
+	["rt.getStep(", /\brt\.getStep\(/g, 2352],
+	["rt.worldTime", /\brt\.worldTime\b/g, 992],
+	["rt.world()", /\brt\.world\(\)/g, 934],
+	["rt.locateIn(", /\brt\.locateIn\(/g, 617],
+	["rt.op(", /\brt\.op\(/g, 1252],
 	["g.op(", /\bg\.op\(/g, 513],
 	// step 8, return values and arguments
-	["return f.dot", /\breturn f\.dot\b/g, 33259],
-	["f.args[", /\bf\.args\[/g, 3525],
+	["return f.dot", /\breturn f\.dot\b/g, 33139],
+	["f.args[", /\bf\.args\[/g, 3512],
 	// step 9, spawns
 	["rt.tail(", /\brt\.tail\(/g, 261],
 	// step 10, text macros
-	["fmt(", /\bfmt\(/g, 2762],
+	["fmt(", /\bfmt\(/g, 2752],
 	// step 11, one spelling per thing
-	["rt.callSrc(", /\brt\.callSrc\(/g, 25],
-	["rt.call(", /\brt\.call\(/g, 198],
-	["rt.fv(", /\brt\.fv\(/g, 75],
+	["rt.callSrc(", /\brt\.callSrc\(/g, 24],
+	["rt.call(", /\brt\.call\(/g, 197],
+	["rt.fv(", /\brt\.fv\(/g, 73],
 	["rt.forList(", /\brt\.forList\(/g, 61],
 	["f.src", /\bf\.src\b/g, 572],
 	// step 12, scratch values
-	["$N", /\$\d+\b/g, 8084],
-	["rt.sv(", /\brt\.sv\(/g, 331],
+	["$N", /\$\d+\b/g, 8009],
+	["rt.sv(", /\brt\.sv\(/g, 324],
 	// step 13, tidy: `else {` that opens with an `if` (the ones left have more after it)
-	["else { if", /else \{\n\t*if \(/g, 559],
+	["else { if", /else \{\n\t*if \(/g, 536],
 ];
 
 const files = [];

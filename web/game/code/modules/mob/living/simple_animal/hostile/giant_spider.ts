@@ -197,7 +197,8 @@ rt.def("/mob/living/simple_animal/hostile/poison/giant_spider/nurse/proc/GiveUp"
 
 // a spawn(100) body of /mob/living/simple_animal/hostile/poison/giant_spider/nurse/proc/GiveUp, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/hostile/poison/giant_spider/nurse/proc/GiveUp: spawn at modules/mob/living/simple_animal/hostile/giant_spider.dm:144", function* (f: Frame, C: Value) {
-	if (this.busy == 3) {
+	// only the timer of the job the spider is still on ends it (tg: an old timer dropped a newer cocoon job); a lost target ends it too
+	if (this.busy == 3 && (this.cocoon_target == C || !this.cocoon_target)) {
 		if (this.cocoon_target == C && get_dist(this, this.cocoon_target) > 1) {
 			this.cocoon_target = null;
 		}

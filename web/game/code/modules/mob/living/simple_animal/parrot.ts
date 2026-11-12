@@ -583,7 +583,7 @@ rt.def("/mob/living/simple_animal/parrot/proc/handle_automated_movement", functi
 
 // parrot.dm:604
 rt.def("/mob/living/simple_animal/parrot/proc/movement_delay", function movement_delay(f: Frame) {
-	if (this.client && this.stat == 0 && this.parrot_state != "parrot_fly") {
+	if (this.client && this.stat == 0 && this.icon_state != "parrot_fly") {
 		this.icon_state = "parrot_fly";
 	}
 	return parent_proc();

@@ -91,8 +91,21 @@ rt.def("/obj/structure/table/abductor/wabbajack/proc/Initialize", function Initi
 
 // special.dm:73
 rt.def("/obj/structure/table/abductor/wabbajack/proc/Destroy", function* Destroy(f: Frame) {
+	let L: Value = null;
 	this.isprocessing = 0;
 	GLOB.SSobj.processing -= this;
+	// tg left the statue counting this altar and its sleepers glowing with no ghost
+	if (this.our_statue) {
+		this.our_statue.active_tables -= this;
+	}
+	for (L of each(this.sleepers)) {
+		if (!L) {
+			continue;
+		}
+		L.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, "#800080");
+		yield* L.grab_ghost();
+	}
+	this.sleepers = list();
 	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);

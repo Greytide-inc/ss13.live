@@ -39,6 +39,7 @@ import { applyColorMatrix } from "./color-matrix.js";
 import { buildAnimationSteps } from "../dmi/animation.js";
 import { findState } from "./sprite-lookup.js";
 import type { ViewUpdate } from "../worker/client-view.js";
+import { isSplit, sheetFor, splitLook, wholeSheet } from "./split-sheets.js";
 import { loadIcon, drawAppearance, drawLighting, isLighting, TILE_PX, type LoadedIcon } from "./station-client.js";
 import { hitTest, type Hit } from "./hit-test.js";
 import { ChunkIndex, chunkCol, chunkRow } from "./chunk-index.js";
@@ -350,7 +351,9 @@ function missingIcons(client: ClientEntry, viewTiles: ViewTile[]): string[] {
 const iconLoads = new Map<string, Promise<void>>(); // sheets on their way (a preload and the view asking for the same sheet share one download)
 function loadOne(path: string): Promise<void> {
 	let p = iconLoads.get(path);
-	if (!p) iconLoads.set(path, (p = loadIcon(path).catch(() => null).then((loaded) => {
+	if (!p) iconLoads.set(path, (p = loadIcon(path).catch(() => null).then(async (loaded) => {
+		const whole = wholeSheet(path);
+		if (!loaded && whole !== path && !path.endsWith("/-none-.dmi")) { await loadOne(whole); loaded = icons.get(whole) ?? null; } // no cut sheet on this server: the whole one, shared
 		iconLoads.delete(path);
 		if (loaded) icons.set(path, loaded);
 		else {
@@ -375,7 +378,7 @@ let preloading = 0;
 function preloadIcons(paths: string[]): void {
 	const fresh = !preloadQueue.length && !preloading;
 	preloadQueue.length = 0;
-	for (const p of paths) if (!icons.has(p) && !failedIcons.has(p)) preloadQueue.push(p);
+	for (const p of paths) if (!icons.has(p) && !failedIcons.has(p) && !isSplit(p)) preloadQueue.push(p); // a cut sheet: its states load as they show
 	if (fresh) setTimeout(preloadNext, PRELOAD_DELAY_MS);
 	preloadLog = { n: preloadQueue.length, t0: performance.now() + PRELOAD_DELAY_MS };
 }
@@ -1333,6 +1336,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			if (now - fl.t0 >= fl.ms) flicks.delete(id);
 			else { animating++; out = { ...out, iconState: fl.state, flickT0: (fl.t0 - t0) / 100 }; viewStats.flickFrames++; }
 		}
+		if (out !== a && out.icon && out.iconState !== a.iconState && isSplit(out.icon)) out.icon = sheetFor(out.icon, out.iconState); // out is a copy here
 		return out;
 	};
 	// client.pixel_x/pixel_y (+ animate(client) steps, id CLIENT_ANIM_ID in anims): shifts the whole map pane, screen objects too
@@ -1771,7 +1775,8 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		if (u.off) clientOff = u.off;
 		{
 			const at = (performance.now() - t0) / 100;
-			for (const [id, a] of u.apps) {
+			for (const [id, got] of u.apps) {
+				const a = splitLook(got); // a look on a cut sheet: its state's own small sheet (split-sheets.ts)
 				const old = lightFadeOn && !u.full ? apps.get(id) : undefined;
 				if (old && isLighting(old) && isLighting(a)) {
 					let lf = lightFades.get(id);
@@ -1789,8 +1794,18 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		if (!u.full || u.seq === 1) for (const ev of u.anims ?? []) { // animate()/flick()
 			const at = performance.now();
 			if (ev[0] === "f") {
-				const a = apps.get(ev[1]), st = a?.icon ? icons.get(a.icon) && findState(icons.get(a.icon)!.dmi, ev[2]) : null;
+				const a = apps.get(ev[1]), fi = a?.icon ? sheetFor(a.icon, ev[2]) : "", st = fi ? icons.get(fi) && findState(icons.get(fi)!.dmi, ev[2]) : null;
 				viewStats.animEvents++; animEv = true;
+				if (a && !st && isSplit(fi) && !failedIcons.has(fi)) { // the flick's state is a cut sheet not loaded yet: it plays from the start once it is
+					const [, id, state] = ev;
+					void loadOne(fi).then(() => {
+						const s = icons.get(fi) && findState(icons.get(fi)!.dmi, state);
+						if (!s || !apps.has(id)) return;
+						flicks.set(id, { state, t0: performance.now(), ms: buildAnimationSteps(s.frames, s.delay, s.rewind).reduce((n, x) => n + x.delay, 0) * 100 });
+						markId(id); schedule();
+					});
+					continue;
+				}
 				if (viewStats.animLog.length < 200) viewStats.animLog.push(`${ev[1]} flick ${ev[2]} ${a ? (st ? "ok" : "nostate " + a.icon) : "noapp"}`);
 				if (a && st) flicks.set(ev[1], { state: ev[2], t0: at, ms: buildAnimationSteps(st.frames, st.delay, st.rewind).reduce((n, x) => n + x.delay, 0) * 100 });
 				continue;

@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "skipLibCheck": true,
-    "paths": { "#runtime": ["../src/translate/runtime.ts"] }
+    "paths": { "#runtime": ["../build/game-decl/runtime.d.ts"] }
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "../build/game-decl/game.d.ts"]
 }

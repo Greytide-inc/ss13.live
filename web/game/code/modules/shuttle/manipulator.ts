@@ -209,7 +209,9 @@ rt.def("/obj/machinery/shuttle_manipulator/proc/action_load", function* action_l
 		warning(`${(m_4 = `Unsuccessful dock of ${this.preview_shuttle} (${result}).`)} in ${"code/modules/shuttle/manipulator.dm"} at line ${224} src: ${this} usr: ${f.usr}.`);
 		return f.dot;
 	}
-	yield* this.existing_shuttle.jumpToNullSpace();
+	if (this.existing_shuttle) { // a template that replaces nothing (tg: an error here)
+		yield* this.existing_shuttle.jumpToNullSpace();
+	}
 	yield* this.preview_shuttle.dock(D);
 	f.dot = this.preview_shuttle;
 	this.preview_shuttle.timer = timer;

@@ -107,19 +107,19 @@ rt.def("/obj/machinery/conveyor/proc/update", function update(f: Frame) {
 		this.operating = 0;
 		return f.dot;
 	}
-	if (!this.operable) {
-		this.operating = 0;
+	// `operating` is what the switch set (1, -1 or 0). No power or a broken neighbour only stops the belt for now: tg set
+	// operating to 0, so belts stayed stopped after a power cut until someone flipped their switch.
+	let running: Value = this.operating;
+	if (!this.operable || rt.bitAnd(this.stat, 2)) {
+		running = 0;
 	}
-	if (rt.bitAnd(this.stat, 2)) {
-		this.operating = 0;
-	}
-	this.icon_state = `conveyor${this.operating * this.verted}`;
+	this.icon_state = `conveyor${running * this.verted}`;
 	return f.dot;
 });
 
 // conveyor2.dm:102
 rt.def("/obj/machinery/conveyor/proc/process", function* process(f: Frame) {
-	if (rt.bitAnd(this.stat, 3)) {
+	if (rt.bitAnd(this.stat, 3) || !this.operable) {
 		return f.dot;
 	}
 	if (!this.operating) {

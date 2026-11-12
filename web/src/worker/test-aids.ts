@@ -18,6 +18,12 @@ export function holdLobby(vm: VM): void {
 	ticker(vm)?.setVar("timeLeft", 36000);
 }
 
+/** Lets a held lobby count down again: tg's usual two minutes, or what is left if less. */
+export function releaseLobby(vm: VM): void {
+	const t = ticker(vm), left = Number(t?.getVar("timeLeft"));
+	if (t && left > 1200) t.setVar("timeLeft", 1200);
+}
+
 /** Readies client c in the lobby as `job` alone, at High, and starts the round at once: tg's DivideOccupations then
  *  gives the job and puts the mob on its station landmark. Returns the job choices it cleared, for restoreJobPrefs
  *  once the player has spawned (null if c has no prefs). */

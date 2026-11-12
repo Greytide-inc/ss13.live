@@ -112,10 +112,11 @@ rt.def("/obj/machinery/launchpad/proc/doteleport", function* doteleport(f: Frame
 	playsound(rt.getStep(f, this, 0), rt.rsc("sound/weapons/flash.ogg"), 25, 1);
 	this.teleporting = 1;
 	yield* sleep(this.teleport_speed);
+	// tg cleared `teleporting` only after the checks below, so a pad that lost power or had its panel opened during the wait stayed busy all round.
+	this.teleporting = 0;
 	if (!this || this.gc_destroyed || !this.isAvailable()) {
 		return f.dot;
 	}
-	this.teleporting = 0;
 	yield* this.use_power(1000);
 	let source: Value = target;
 	let dest: Value = rt.getStep(f, this, 0);

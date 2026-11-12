@@ -31,6 +31,7 @@ import { Scheduler, TAIL_MARK, Thread, timeOfDay } from "./scheduler.js";
 import { AreaContentsList, ContentsList, DMAtom, GameMap, type Kind } from "./world.js";
 import { Appearances, DMAppearance, OverlayList } from "./appearances.js";
 import { Clients } from "./clients.js";
+import { Dialogs } from "./dialogs.js";
 import { WorldLogOut } from "./natives-io.js";
 import { Random } from "./random.js";
 import { Vfs } from "../vfs/vfs.js";
@@ -56,12 +57,12 @@ function programPrint(vm: VM): string {
 }
 /** Arrays up to this length are loaded at their exact size (see loadSnapshot). */
 const EXACT_ARRAY_MAX = 4096;
-const VERSION = 5; // 5 (view-dirty): an OverlayList's 5th field is its owner, not Appearances; 4: no bytecode (Frame without code/pc/stack, no T_CODE/T_NOCODE values); DMObject vars as VarShape + vals (was a Map per object); 3 (mem3): gcFlags has AssocShared and Indexed (the mark moved up 2 bits), a list's search index is a side table
+const VERSION = 6; // 6 (dialogs): Clients keeps open dialogs in a Dialogs object (was a prompts Map + promptId); 5 (view-dirty): an OverlayList's 5th field is its owner, not Appearances; 4: no bytecode (Frame without code/pc/stack, no T_CODE/T_NOCODE values); DMObject vars as VarShape + vals (was a Map per object); 3 (mem3): gcFlags has AssocShared and Indexed (the mark moved up 2 bits), a list's search index is a side table
 
 // Every class an object in the VM's state may have. Anything else is a blocker (the save names it).
 const CLASSES: Function[] = [
 	Object, DMObject, DMList, ArgsList, VarsList, ScreenList, DMAtom, ContentsList, AreaContentsList, GameMap,
-	DMAppearance, OverlayList, Appearances, Clients, WorldLogOut, Resource, ListLiteral, Thread, Scheduler, Frame, VM,
+	DMAppearance, OverlayList, Appearances, Clients, Dialogs, WorldLogOut, Resource, ListLiteral, Thread, Scheduler, Frame, VM,
 	Random, Vfs, RangeEnumerator, ListEnumerator, VerbList, SaveNode, SavedObject, SavedList, SaveState, SaveDirList,
 	DMRuntimeError, VarShape,
 ];

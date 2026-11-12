@@ -57,6 +57,10 @@ cp("web/worker/popup.html", "popup.html"); // tsh-chat: popup frames load it, ne
 if (existsSync(join(repo, "web/scenarios"))) cp("web/scenarios", "web/scenarios"); // ?scenario=NAME fetches /web/scenarios/NAME.txt (the public copy has none)
 // files the game names at runtime (browse_rsc, sound, icons, skin)
 for (const d of ["icons", "sound", "html", "tgui/assets", "interface/skin.dmf", "config/title_screens/images"]) cp(d, d); // the lobby splash turf's icon (SStitle) lives in config/
+{ // the giant sheets cut into one small sheet per state, under icons/_split/ (src/render/split-sheets.ts)
+	const r = spawnSync(process.execPath, ["build/dist/src/tools/split-sheets.js", out], { cwd: web, stdio: ["ignore", "inherit", "inherit"] });
+	if (r.status !== 0) throw new Error(`split-sheets failed (exit ${r.status})`);
+}
 // browse_rsc'd from code/ (html_interface windows like the crew monitor, tooltips): everything but the .dm source
 const notDm = (f) => !f.endsWith(".dm");
 for (const d of ["code/modules/html_interface", "code/modules/tooltip"]) cp(d, d, notDm);

@@ -71,6 +71,9 @@ rt.def("/obj/machinery/computer/holodeck/proc/load_program", function* load_prog
 	if ($0 < $1 + (this.damaged ? 500 : 0) && !force) {
 		if (delay) {
 			yield* sleep(25);
+			if (this.starting_program !== A) {
+				return f.dot;
+			}
 		} else {
 			if (rt.worldTime(f) < this.last_change + 15) {
 				return f.dot;
@@ -81,6 +84,7 @@ rt.def("/obj/machinery/computer/holodeck/proc/load_program", function* load_prog
 			}
 		}
 	}
+	this.starting_program = null;
 	this.last_change = rt.worldTime(f);
 	this.active = (A != this.offline_program ? 1 : 0);
 	this.use_power = this.active ? 2 : 1;

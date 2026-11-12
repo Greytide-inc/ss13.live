@@ -162,7 +162,8 @@ rt.def("/obj/item/device/assembly/signaler/proc/attackby", function* attackby(f:
 		signaler2 = W;
 		if (this.secured && signaler2.secured) {
 			this.code = signaler2.code;
-			this.frequency = signaler2.frequency;
+			// tg set `frequency` directly: the number changed but the radio connection stayed on the old frequency.
+			yield* this.set_frequency(signaler2.frequency);
 			to_chat(user, fmt("You transfer the frequency and code of ％！ to ％！", [signaler2.name, this.name]));
 		}
 	} else {

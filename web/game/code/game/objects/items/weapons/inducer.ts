@@ -145,7 +145,8 @@ rt.def("/obj/item/weapon/inducer/proc/recharge", function* recharge(f: Frame, A:
 			if (E) {
 				E.chambered = null;
 			}
-			if ((yield* do_after(user, 10, { target: user })) && this.cell.charge) {
+			// tg read this.cell.charge with no null check: a cell taken out mid-charge killed the proc with `recharging` still set.
+			if ((yield* do_after(user, 10, { target: user })) && this.cell && this.cell.charge) {
 				yield* this.induce(C, coefficient);
 				yield* do_sparks(1, 0, A);
 				if (O) {

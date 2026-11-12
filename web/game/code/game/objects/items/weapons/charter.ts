@@ -83,6 +83,7 @@ rt.def("/obj/item/weapon/station_charter/proc/reject_proposed", function* reject
 
 // charter.dm:81
 rt.def("/obj/item/weapon/station_charter/proc/rename_station", function rename_station(f: Frame, designation: Value, uname: Value, ureal_name: Value, ukey: Value) {
+	this.response_timer_id = null; // the approval wait is over (tg left it set: "still waiting for approval", and an admin could reject a name already in use)
 	set_station_name(designation);
 	minor_announce(`${ureal_name} has designated your station as ${station_name()}`, "Captain's Charter", 0);
 	log_game(`${ukey} has renamed the station as ${station_name()}.`);
@@ -106,6 +107,7 @@ rt.type(7126, "/obj/item/weapon/station_charter/flag", "/obj/item/weapon/station
 
 // charter.dm:108
 rt.def("/obj/item/weapon/station_charter/flag/proc/rename_station", function rename_station(f: Frame, designation: Value, uname: Value, ureal_name: Value, ukey: Value) {
+	this.response_timer_id = null; // the approval wait is over (tg left it set: "still waiting for approval", and an admin could reject a name already in use)
 	set_station_name(designation);
 	minor_announce(`${ureal_name} has designated the planet as ${station_name()}`, "Captain's Banner", 0);
 	log_game(`${ukey} has renamed the planet as ${station_name()}.`);

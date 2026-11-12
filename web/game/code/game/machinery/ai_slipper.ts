@@ -46,7 +46,7 @@ rt.def("/obj/machinery/ai_slipper/proc/power_change", function power_change(f: F
 		} else {
 			(rt.modSrcVar(f, "stat", 2, rt.bitOr));
 		}
-		if (rt.bitAnd(this.stat, 3) || this.cooldown_time > rt.worldTime(f) || !this.uses) {
+		if (rt.bitAnd(this.stat, 3) || this.cooldown > rt.worldTime(f) || !this.uses) {
 			this.icon_state = "ai-slipper0";
 		} else {
 			this.icon_state = "ai-slipper1";
@@ -73,8 +73,10 @@ rt.def("/obj/machinery/ai_slipper/proc/attack_hand", function* attack_hand(f: Fr
 		to_chat(user, `<span class='danger'>${this} is out of foam and cannot be activated.</span>`);
 		return f.dot;
 	}
-	if (this.cooldown_time > rt.worldTime(f)) {
-		to_chat(user, fmt("<span class='danger'>＀ cannot be activated for another <b>＀</b> second５.</span>", [this, round((rt.worldTime(f) - this.cooldown_time) * 0.1)]));
+	// `cooldown` is when the dispenser is ready again. tg compared `cooldown_time` (the length, 10 s) here, so after the
+	// first 10 s of a round it had no cooldown at all, and the seconds left came out negative.
+	if (this.cooldown > rt.worldTime(f)) {
+		to_chat(user, fmt("<span class='danger'>＀ cannot be activated for another <b>＀</b> second５.</span>", [this, round((this.cooldown - rt.worldTime(f)) * 0.1)]));
 		return f.dot;
 	}
 	yield* new_(T("/obj/effect/particle_effect/foam"), this.loc);

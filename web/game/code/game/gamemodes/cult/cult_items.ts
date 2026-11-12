@@ -396,6 +396,9 @@ rt.def("/obj/item/device/shuttle_curse/proc/attack_self", function* attack_self(
 		return f.dot;
 	}
 	if (GLOB.SSshuttle.emergency.mode != "call") return f.dot;
+	// tg_js: a curse counts against the limit the moment it delays the shuttle (tg counted it after the 2 s wait below,
+	// so orbs broken in that wait all got past the limit).
+	GLOB.curselimit++;
 	let cursetime: Value = 1800;
 	let timer: Value = GLOB.SSshuttle.emergency.timeLeft(1) + cursetime;
 	GLOB.SSshuttle.emergency.setTimer(timer);
@@ -407,7 +410,6 @@ rt.def("/obj/item/device/shuttle_curse/proc/attack_self", function* attack_self(
 		GLOB.curses = list("A fuel technician just slit his own throat and begged for death. The shuttle will be delayed by three minutes.", "The shuttle's navigation programming was replaced by a file containing two words, IT COMES. The shuttle will be delayed by three minutes.", "The shuttle's custodian tore out his guts and began painting strange shapes on the floor. The shuttle will be delayed by three minutes.", "A shuttle engineer began screaming 'DEATH IS NOT THE END' and ripped out wires until an arc flash seared off her flesh. The shuttle will be delayed by three minutes.", "A shuttle inspector started laughing madly over the radio and then threw herself into an engine turbine. The shuttle will be delayed by three minutes.", "The shuttle dispatcher was found dead with bloody symbols carved into their flesh. The shuttle will be delayed by three minutes.");
 	}
 	yield* priority_announce(`${(message = pick_n_take(GLOB.curses))}`, "System Failure", rt.rsc("sound/misc/notice1.ogg"));
-	GLOB.curselimit++;
 	return f.dot;
 }, true);
 

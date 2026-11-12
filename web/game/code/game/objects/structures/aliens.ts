@@ -349,6 +349,9 @@ rt.def("/obj/structure/alien/egg/proc/attack_hand", function* attack_hand(f: Fra
 
 // aliens.dm:278
 rt.def("/obj/structure/alien/egg/proc/Grow", function* Grow(f: Frame) {
+	// tg_js: an egg goes growing -> grown -> burst and never back; growth only finishes an egg still growing (tg's timer
+	// set "grown" on an egg already broken, making it whole and armed again).
+	if (this.status != "growing") return f.dot;
 	this.status = "grown";
 	yield* this.update_icon();
 	yield* this.proximity_monitor.SetRange(1);

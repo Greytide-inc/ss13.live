@@ -556,7 +556,7 @@ rt.def("/obj/item/device/flashlight/glowstick/proc/attack_self", function* attac
 
 // flashlight.dm:452
 rt.def("/obj/item/device/flashlight/glowstick/proc/activate", function activate(f: Frame) {
-	if (this.on) return f.dot;
+	// Lit means on and burning. tg returned when `on` was already set, but attack_self's ..() sets it first, so the fuel never burned.
 	this.on = 1;
 	if (this.isprocessing) return f.dot;
 	this.isprocessing = 1;

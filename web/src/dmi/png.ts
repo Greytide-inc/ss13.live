@@ -112,10 +112,11 @@ export function encodeDmi(icon: IconImage, deflate: (data: Uint8Array) => Uint8A
 	return concat([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pngChunk("IHDR", ihdr), pngChunk("zTXt", ztxt), pngChunk("IDAT", deflate(raw)), pngChunk("IEND", new Uint8Array())]);
 }
 
-/** One frame as a plain 8-bit RGBA PNG (what a browser <img> shows for a browse_rsc'd icon). */
-export function encodePng(width: number, height: number, rgba: Uint8Array | Uint8ClampedArray, deflate: (data: Uint8Array) => Uint8Array = zlibStored): Uint8Array {
+/** One frame as a plain 8-bit RGBA PNG (what a browser <img> shows for a browse_rsc'd icon). With `description`, a .dmi (its zTXt Description). */
+export function encodePng(width: number, height: number, rgba: Uint8Array | Uint8ClampedArray, deflate: (data: Uint8Array) => Uint8Array = zlibStored, description?: string): Uint8Array {
 	const raw = new Uint8Array(height * (1 + width * 4));
 	for (let y = 0; y < height; y++) raw.set(rgba.subarray(y * width * 4, (y + 1) * width * 4), y * (1 + width * 4) + 1);
 	const ihdr = concat([u32(width), u32(height), new Uint8Array([8, 6, 0, 0, 0])]);
-	return concat([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pngChunk("IHDR", ihdr), pngChunk("IDAT", deflate(raw)), pngChunk("IEND", new Uint8Array())]);
+	const ztxt = description === undefined ? [] : [pngChunk("zTXt", concat([latin1("Description\0\0"), deflate(latin1(description))]))];
+	return concat([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pngChunk("IHDR", ihdr), ...ztxt, pngChunk("IDAT", deflate(raw)), pngChunk("IEND", new Uint8Array())]);
 }

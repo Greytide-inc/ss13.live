@@ -114,7 +114,10 @@ vm.clients.onMessage = (m) => {
 					let opaque = 0; if (px) for (let i = 3; i < px.length; i += 4) if (px[i]) opaque++;
 					log(`[vm-boot] rsc icon ${file} as ${name}: ${img.width}x${img.height}, ${img.states.length} states, ${opaque} visible pixels (fetched ${need.length} icon files)`);
 					post({ type: "rsc_png", player: m.client, name, png: encodePng(img.width, img.height, px ?? new Uint8Array(img.width * img.height * 4)) });
-				})();
+				})().catch((e) => { // the page is waiting for this icon: tell it the render failed, so its popups don't wait on it (worker/popups.js, PNG_GIVE_UP_MS)
+					log(`[vm-boot] rsc icon ${file} as ${name} failed: ${(e as Error)?.message ?? e}`);
+					post({ type: "rsc_png", player: m.client, name, png: null });
+				});
 			}
 			forward();
 			break;

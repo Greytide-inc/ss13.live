@@ -383,6 +383,9 @@ rt.def("/obj/machinery/newscaster/proc/power_change", function power_change(f: F
 
 // a spawn(rt.call(f, P("/proc/rand"), null, [0, 15])) body of /obj/machinery/newscaster/proc/power_change, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/newscaster/proc/power_change: spawn at game/machinery/newscaster.dm:247", function* (f: Frame) {
+	if (this.powered()) { // power came back during the wait (tg: the screen then stayed dark)
+		return null;
+	}
 	(rt.modSrcVar(f, "stat", 2, rt.bitOr));
 	yield* this.update_icon();
 	return null;

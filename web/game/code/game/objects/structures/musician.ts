@@ -8,6 +8,7 @@ rt.type(1836, "/datum/song", "/datum", {
 	name: "Untitled",
 	tempo: 5,
 	playing: 0,
+	play_run: 0, // counts Play presses: a song loop that is not the newest one stops (tg: Stop then Play inside one note left two loops playing)
 	help: 0,
 	edit: 1,
 	repeat: 0,
@@ -105,8 +106,10 @@ rt.def("/datum/song/proc/shouldStopPlaying", function shouldStopPlaying(f: Frame
 
 // musician.dm:78
 rt.def("/datum/song/proc/playsong", function* playsong(f: Frame, user: Value) {
-	let cur_oct: Value = null, cur_acc: Value = null, i: Value = null, line: Value = null, beat: Value = null, notes: Value = null, note: Value = null, cur_note: Value = null, i_7: Value = null, ni: Value = null;
+	let cur_oct: Value = null, cur_acc: Value = null, i: Value = null, line: Value = null, beat: Value = null, notes: Value = null, note: Value = null, cur_note: Value = null, i_7: Value = null, ni: Value = null, my_run: Value = null;
 	let $e: any;
+	this.play_run++;
+	my_run = this.play_run;
 	while (this.repeat >= 0) {
 		cur_oct = rt.op(f, "CreateMultidimensionalList", [1], [7]);
 		cur_acc = rt.op(f, "CreateMultidimensionalList", [1], [7]);
@@ -168,6 +171,9 @@ rt.def("/datum/song/proc/playsong", function* playsong(f: Frame, user: Value) {
 					yield* sleep(this.sanitize_tempo(this.tempo / text2num(rt.index(notes, 2))));
 				} else {
 					yield* sleep(this.tempo);
+				}
+				if (this.play_run != my_run) {
+					return f.dot;
 				}
 			}
 		}

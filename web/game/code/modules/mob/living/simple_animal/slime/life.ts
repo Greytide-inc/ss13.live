@@ -74,7 +74,8 @@ rt.def("/mob/living/simple_animal/slime/proc/AIprocess", function* AIprocess(f: 
 							yield* this.Target.attack_slime(this);
 						}
 					}
-					return f.dot;
+					// tg returned here, skipping the `AIproc = 0` below: every later AIprocess quit at once (no hunting, no feeding).
+					break;
 				}
 				if (!this.Target.lying && prob(80)) {
 					if (this.Target.client && this.Target.health >= 20) {

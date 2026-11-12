@@ -20,6 +20,7 @@ import { urlEncode } from "./natives-text.js";
 import { DMRuntimeError, NotImplementedError, isTruthy, stringify, type Value } from "./value.js";
 import { DMAtom, Kind, normalizeViewSize, viewHalfSize } from "./world.js";
 import { ArgType, nextToken, parseArgs, pickByName } from "./command-line.js";
+import { Dialogs, type Closed } from "./dialogs.js";
 
 /** One message for a player's client. `client` is its ckey. */
 export interface OutMsg {
@@ -272,6 +273,8 @@ export class Clients {
 			const lo = m.type.procs.get("Logout");
 			if (lo && !lo.isNative && !m.deleted) this.vm.call(lo, [], m, m);
 		}
+		// Their open dialogs are cancelled: an input()/alert() carries on with null, a verb's argument box drops the verb.
+		this.tellWaiting(this.dialogs.playerLeft(ckeyText(c)));
 		this.send(ckeyText(c), { type: "disconnect" });
 	}
 
@@ -977,8 +980,7 @@ export class Clients {
 	// Measured (tests/dm/prompt.dm): alert() to a non-player returns Button1; input() with no default and no null: runtime error "bad client". Not documented: the empty-number-box answer (0, guess),
 	// a text box answering "" (returned as "", guess). Dialogs stack on the page; each parks only its own thread.
 
-	private readonly prompts = new Map<number, { req: PromptReq; items?: Value[]; num?: boolean; buttons?: string[]; ckey: string; then?: (v: Value) => void }>();
-	private promptId = 0;
+	private readonly dialogs = new Dialogs<{ req: PromptReq; then?: (v: Value) => void }>(MAX_DIALOGS);
 
 	/** `input(...)`: the arguments as the Prompt opcode pops them. Returns the answer, or null while a dialog is open (the VM parks the thread). */
 	prompt(types: number, list: Value, a1: Value, a2: Value, a3: Value, a4: Value, usr: Value): Value {
@@ -1014,32 +1016,25 @@ export class Clients {
 
 	private openDialog(c: DMObject, d: Record<string, unknown>, items?: Value[], num?: boolean, then?: (v: Value) => void): Value {
 		const req: PromptReq = {};
-		const id = ++this.promptId;
 		const ckey = ckeyText(c);
-		// ps-security: a player's open dialogs are capped (each parks a thread until answered): past the cap the oldest is cancelled.
-		const mine = [...this.prompts].filter(([, p]) => p.ckey === ckey);
-		if (mine.length >= MAX_DIALOGS) this.answer(mine[0][0], null);
-		this.prompts.set(id, { req, items, num, buttons: d.kind === "alert" ? (d.buttons as string[]) : undefined, ckey, then });
+		const { id, closed } = this.dialogs.open({ ckey, items, num, buttons: d.kind === "alert" ? (d.buttons as string[]) : undefined, waiting: { req, then } });
+		this.tellWaiting(closed);
 		this.send(ckey, { type: "dialog", id, ...d });
 		if (!then) this.vm.park(req);
 		return null;
 	}
 
-	/** The page's answer to dialog `id`: `value` is the text, number, or list index; null = Cancel; an alert answers its button's text. */
+	/** The page's answer to dialog `id` (see Dialogs.answer). */
 	answer(id: number, value: string | number | null, ckey?: string): void {
-		const p = this.prompts.get(id);
-		if (!p) return;
-		// ps-security: only the player who was asked may answer, and only with something the dialog offers (a list row, one of the
-		// alert's buttons); anything else leaves the dialog open.
-		if (ckey !== undefined && p.ckey !== ckey) return;
-		if (value !== null && p.items && !(typeof value === "number" && Number.isInteger(value) && value >= 0 && value < p.items.length)) return;
-		if (value !== null && p.buttons && !(typeof value === "string" && p.buttons.includes(value))) return;
-		this.prompts.delete(id);
-		let v: Value = null;
-		if (p.items) v = typeof value === "number" ? p.items[value] ?? null : null;
-		else if (value !== null) v = p.num ? Number(value) || 0 : value;
-		if (p.then) p.then(v);
-		else this.vm.answerPrompt(p.req, v);
+		this.tellWaiting(this.dialogs.answer(id, value, ckey));
+	}
+
+	/** Hands each closed dialog's answer on: a verb's argument box to its verb, an input()/alert() to its parked thread. */
+	private tellWaiting(closed: Closed<{ req: PromptReq; then?: (v: Value) => void }>[]): void {
+		for (const { waiting, value } of closed) {
+			if (waiting.then) waiting.then(value);
+			else this.vm.answerPrompt(waiting.req, value);
+		}
 	}
 
 	/** The verbs an object has right now: its runtime `verbs` list if it has one, else its type's. */

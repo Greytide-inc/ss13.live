@@ -13,6 +13,7 @@ rt.type(10421, "/obj/machinery/computer/holodeck", "/obj/machinery/computer", {
 	init_program: null,
 	random_program: 0,
 	active: 0,
+	starting_program: null,
 	damaged: 0,
 	spawned: null,
 	effects: null,
@@ -106,16 +107,25 @@ rt.def("/obj/machinery/computer/holodeck/proc/power_change", function* power_cha
 // computer.dm:100
 rt.def("/obj/machinery/computer/holodeck/proc/toggle_power", function* toggle_power(f: Frame, toggleOn: Value) {
 	toggleOn ??= 0;
-	if (this.active == toggleOn) {
+	// tg_js: the holodeck is off, starting (`starting_program` set: a power-on waiting out the 2.5 s recalibration before it
+	// shows that program) or on. Switching off or picking a program while starting cancels the start (tg checked only
+	// `active`, set after the wait, so a switch-off then was dropped and the wait's end overwrote a program picked meanwhile).
+	if (toggleOn ? this.active || this.starting_program : !this.active && !this.starting_program) {
 		return f.dot;
 	}
 	if (toggleOn) {
 		if (this.last_program && this.last_program != this.offline_program) {
+			this.starting_program = this.last_program;
 			yield* this.load_program(this.last_program, { delay: 1 });
+			this.starting_program = null;
+		} else {
+			this.active = 1;
 		}
-		this.active = 1;
 	} else {
-		this.last_program = this.program;
+		if (this.active) {
+			this.last_program = this.program;
+		}
+		this.starting_program = null;
 		yield* this.load_program(this.offline_program, { force: 1 });
 		this.active = 0;
 	}
@@ -125,6 +135,7 @@ rt.def("/obj/machinery/computer/holodeck/proc/toggle_power", function* toggle_po
 // computer.dm:112
 rt.def("/obj/machinery/computer/holodeck/proc/emergency_shutdown", function* emergency_shutdown(f: Frame) {
 	this.last_program = this.program;
+	this.starting_program = null;
 	yield* this.load_program(this.offline_program, 1);
 	this.active = 0;
 	return f.dot;

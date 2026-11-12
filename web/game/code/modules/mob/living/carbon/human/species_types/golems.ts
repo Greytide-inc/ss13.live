@@ -522,6 +522,7 @@ rt.def("/datum/species/golem/bluespace/proc/on_species_loss", function* on_speci
 rt.type(151, "/datum/action/innate/unstable_teleport", "/datum/action/innate", {
 	cooldown: 150,
 	last_teleport: 0,
+	charging: 0, // 1 from the button press until the teleport (tg: a second press in the 1.5 s charge teleported twice)
 	name: "Unstable Teleport",
 	check_flags: 8,
 	button_icon_state: "jaunt",
@@ -530,6 +531,9 @@ rt.type(151, "/datum/action/innate/unstable_teleport", "/datum/action/innate", {
 // golems.dm:443
 rt.def("/datum/action/innate/unstable_teleport/proc/IsAvailable", function IsAvailable(f: Frame) {
 	if (!parent_proc()) return f.dot;
+	if (this.charging) {
+		return 0;
+	}
 	if (rt.worldTime(f) > this.last_teleport + this.cooldown) {
 		return 1;
 	}
@@ -539,6 +543,10 @@ rt.def("/datum/action/innate/unstable_teleport/proc/IsAvailable", function IsAva
 // golems.dm:449
 rt.def("/datum/action/innate/unstable_teleport/proc/Activate", function* Activate(f: Frame) {
 	let H: Value = null;
+	if (this.charging) {
+		return f.dot;
+	}
+	this.charging = 1;
 	(H = this.owner).visible_message(`<span class='warning'>${H} starts vibrating!</span>`, "<span class='danger'>You start charging your bluespace core...</span>");
 	playsound(rt.getStep(f, H, 0), rt.rsc("sound/weapons/flash.ogg"), 25, 1);
 	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/datum/action/innate/unstable_teleport/proc/teleport"), H)), 15);
@@ -548,6 +556,7 @@ rt.def("/datum/action/innate/unstable_teleport/proc/Activate", function* Activat
 // golems.dm:455
 rt.def("/datum/action/innate/unstable_teleport/proc/teleport", function* teleport(f: Frame, H: Value) {
 	let spark_system: Value = null;
+	this.charging = 0;
 	H.visible_message(`<span class='warning'>${H} disappears in a shower of sparks!</span>`, "<span class='danger'>You teleport!</span>");
 	yield* (spark_system = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(10, 0, this);
 	yield* spark_system.attach(H);

@@ -169,6 +169,7 @@ let diary = null as import("./diff/diary.js").Diary | null;
 let startDiary: () => void = () => {};
 const dkCounts = new Map<string, number>(); // DK_COUNT tallies
 let trSetEnter: typeof import("../translate/runtime.js").setEnterHook | null = null; // set when the bundle loads
+let trPlainSleeps: Map<string, number> | null = null;
 if (diffOn) {
 	const dm = await import("./diff/diary.js");
 	// --diff-vcost [N] (or DIFF_VCOST=1|N): tick_usage = DM proc calls this tick / N (N calls = 1 %), so CHECK_TICK sleeps sometimes.
@@ -201,6 +202,7 @@ vm.iconStates = iconStatesReader([repoRoot]); // icon_states(): read from the fi
 	await import(pathToFileURL(bundleJs).href);
 	const n = rt.install(vm);
 	trSetEnter = rt.setEnterHook;
+	trPlainSleeps = rt.plainSleeps;
 	if (process.env.DK_COUNT) { // DK_COUNT=REGEX counts calls of translated procs whose path matches, inside the DK_PROF window (or the whole run without one); listed at the end
 		const re = new RegExp(process.env.DK_COUNT), hit = new Map<unknown, boolean>();
 		rt.setEnterHook((proc) => { if (dkProfTime >= 0 || dkProfTick >= 0 ? dkSession === null : false) return; let m = hit.get(proc); if (m === undefined) hit.set(proc, m = re.test(proc.path)); if (m) dkCounts.set(proc.path, (dkCounts.get(proc.path) ?? 0) + 1); });
@@ -504,6 +506,7 @@ if (roundStart !== null) {
 	summary.push(`[vm-boot] VM collector: ${g.freed} objects freed at ${g.safePoints} safe points, ${(g.ms / 1000).toFixed(1)} s; ${vm.map.atoms.size} atoms`);
 	if (process.env.VM_GC_VERIFY) summary.push(`[vm-boot] reference count check: ${vm.gcVerify().join("; ") || "ok"}`);
 	if (dkCounts.size) summary.push(`[pf1] call counts: ${[...dkCounts].sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${v}`).join(", ")}`);
+	if (trPlainSleeps) { const ps = [...trPlainSleeps].sort((x, y) => y[1] - x[1]); summary.push(`[vm-boot] plain procs whose callee slept (the caller carried on): ${ps.reduce((n, x) => n + x[1], 0)}${ps.length ? ": " + ps.slice(0, 20).map(([k, v]) => `${k} x${v}`).join(", ") : ""}`); }
 	summary.push(`[vm-boot] heap at end ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);
 	const gc = (globalThis as { gc?: () => void }).gc; // node --expose-gc: what the world really keeps
 	if (gc) { gc(); summary.push(`[vm-boot] heap after a forced GC ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`); }

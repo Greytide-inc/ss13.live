@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // translate-tg.mjs - Transpile the game code (web/game/, hand-edited TypeScript source) to build/game-js and bundle it as build/translated-tg.js (procs) + build/game-types.js (types).
 // Usage (from web/): node tools/translate-tg.mjs   (no translator any more; game/ is the source)
-//   The boot (boot.js, npm run boot-check -- NAME) loads the result.
+//   The boot (boot.js, npm run boot-check -- NAME) loads the result. Also build/game-decl/, the editor's names (game-decl.mjs).
 //   Transpile only (ts.transpileModule per file, no type check): ~34 MB of TS is too big for a full tsc run.
 //   tr1: also writes build/translated-tg.js, every file in one module (each file's body in its own block, one import of
 //   the runtime), which is what the page's worker (?translated=1) and boot.js load: one request, not 2,038.
@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { dmName } from "./js-names.mjs";
 import { globalKeys } from "./globals-table.mjs";
+import { addDecl, writeDecls } from "./game-decl.mjs";
 import { readDefines, isDefineUse } from "./define-names.mjs";
 import { BIT_OPS, callCanWait, constNeg, declaredNames, DM_ASSIGN, isListCall, isNewCall, namedObj, DM_BINARY, DM_BUILTINS, DM_NEGATED, eachSlot, isEachLoop, nearestFunction, opFunction, plainTarget, procFunction, procMovesSrc, procNameSets, readableCall, readableGlobal, readableVar, rtAliases, scopeNames,
 	thisFunction, varNameSet } from "./proc-calls.mjs";
@@ -97,6 +98,7 @@ const splitDecls = (f, text) => {
 		const e = ts.isExpressionStatement(st) ? st.expression : null;
 		if (!(e && ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression) && ts.isIdentifier(e.expression.expression)
 			&& e.expression.expression.text === "rt")) continue;
+		if (!hotOut) addDecl(f, sf, e);
 		if (DECL.has(e.expression.name.text)) cut.push([st.getStart(sf), st.end]);
 		else if (e.expression.name.text === "def") paths.push(procDecl(f, sf, text, e));
 	}
@@ -734,7 +736,8 @@ if (bad) { console.error(`[translate-tg] ${bad} file(s) with syntax errors (abov
 if (hotOut) { writeFileSync(hotOut, JSON.stringify(hotRes)); process.exit(0); }
 writeFileSync(resolve(web, "build/translated-tg.js"), oneByte(bundle.join("\n") + "\n", "translated-tg.js"));
 writeFileSync(resolve(web, "build/game-types.js"), oneByte(typesBundle.join("\n") + "\n", "game-types.js"));
+const book = writeDecls(resolve(web, "build/game-decl"), [...glKeys.keys()], resolve(web, "src/translate/runtime.ts")); // the editor's address book
 writeFileSync(resolve(web, "build/translated-tg.lines.json"), JSON.stringify({ files: lineFiles, starts: lineStarts, defs: lineDefs }));
 const rewrites = Object.values(meter).reduce((a, b) => a + b, 0);
 writeFileSync(resolve(web, "build/rewrite-meter.json"), JSON.stringify({ total: rewrites, kinds: Object.fromEntries(Object.entries(meter).sort((a, b) => b[1] - a[1])) }, null, "\t") + "\n");
-console.log(`[translate-tg] ${files.length} files transpiled to build/game-js (${bad} with syntax errors), ${nDecl} declarations to build/game-types.js, ${rewrites} rewrites (by kind: build/rewrite-meter.json); transpile ${((Date.now() - t1) / 1000).toFixed(1)} s`);
+console.log(`[translate-tg] ${files.length} files transpiled to build/game-js (${bad} with syntax errors), ${nDecl} declarations to build/game-types.js, ${rewrites} rewrites (by kind: build/rewrite-meter.json), editor names for ${book.types} types and ${book.procs} procs to build/game-decl; transpile ${((Date.now() - t1) / 1000).toFixed(1)} s`);

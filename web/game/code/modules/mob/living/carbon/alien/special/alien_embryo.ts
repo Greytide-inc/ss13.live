@@ -118,13 +118,15 @@ rt.def("/obj/item/organ/body_egg/alien_embryo/proc/AttemptGrow", function* Attem
 	new_xeno.notransform = 1;
 	new_xeno.invisibility = INVISIBILITY_MAXIMUM;
 	yield* sleep(6);
-	if (!this || this.gc_destroyed || !this.owner || this.owner.gc_destroyed) {
-		return f.dot;
-	}
-	if (new_xeno) {
+	// tg_js: the larva is hidden and frozen only for the burst's 0.6 s; it comes out first, whatever happened to the host
+	// or embryo meanwhile (tg returned first when they were deleted, leaving the larva player invisible and frozen).
+	if (new_xeno && !new_xeno.gc_destroyed) {
 		new_xeno.canmove = 1;
 		new_xeno.notransform = 0;
 		new_xeno.invisibility = 0;
+	}
+	if (!this || this.gc_destroyed || !this.owner || this.owner.gc_destroyed) {
+		return f.dot;
 	}
 	if (gib_on_success) {
 		new_xeno.visible_message(`<span class='danger'>${new_xeno} bursts out of ${this.owner} in a shower of gore!</span>`, `<span class='userdanger'>You exit ${this.owner}, your previous host.</span>`, "<span class='italics'>You hear organic matter ripping and tearing!</span>");
