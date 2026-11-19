@@ -7,7 +7,8 @@
 
 import assert from "node:assert/strict";
 import { computeLos, cropLosBox, newLosBox, viewSight, type LosBox } from "../../src/vm/view-los.js";
-import { PRED_R, PRED_W, UNION_R, unionExtra } from "../../src/worker/client-view.js";
+import { PRED_R, PRED_W } from "../../src/worker/view-predict.js";
+import { UNION_R, unionExtra } from "../../src/worker/view-sight.js";
 import { pageSees, pageSight, withSight } from "../../src/render/sight-pop-in.js";
 import { packLum, packOpacity, unpackLum, unpackOpacity } from "../../src/render/sight-shadow.js";
 

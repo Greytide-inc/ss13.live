@@ -48,19 +48,16 @@
 // is synchronous and the browser only inflates asynchronously. A runtime icon in a view update is sent as
 // a blob: URL of a real .dmi (png.ts encodeDmi), which the page loads like any other sheet.
 
-import { DMList, DMObject } from "../vm/objects.js";
-import { refOf } from "../vm/refs.js";
-import { loadSnapshot, resumeWorld } from "../vm/snapshot.js";
-import { snapshotMapOk } from "../vm/persist-replay.js";
-import { isTruthy, stringify, type Value } from "../vm/value.js";
+import { DMObject } from "../vm/objects.js";
 import { live } from "../vm/objects.js";
-import { ViewDiffer, buildClientView, zIconsMs } from "./client-view.js";
 import { ScriptPlayer } from "./scenario-script.js";
 import { makeTickAids } from "./tick-aids.js";
 import { makeRunStats } from "./run-stats.js";
+import { startWorld, stopWorld, type WorldStartCtx } from "./world-start.js";
+import { makeJoins } from "./run-joins.js";
+import { sendViews, type ViewsCtx } from "./run-views.js";
 import { loadWorld } from "./load-world.js";
-import { installInput, mouseSeen, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState, type Player, type ClickMsg, type MenuMsg, type MenuPickMsg, type MouseMsg } from "./input.js";
-import { holdLobby, releaseLobby, readyAtRoundStart, restoreJobPrefs } from "./test-aids.js";
+import { installInput, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState, type ClickMsg, type MenuMsg, type MenuPickMsg, type MouseMsg } from "./input.js";
 import { Joins, ckeyOf } from "./joins.js";
 import { parseDmiBytes } from "../dmi/dmi-browser.js";
 import { decodePng, pngIdat } from "../dmi/png.js";
@@ -236,7 +233,6 @@ const yieldNow = () => new Promise<void>((r) => { yieldWake = r; yieldPort.port2
 
 let stopRequested = false;
 const resyncRequested = new Set<string>(); // players asked for a full view ("" = the first player)
-let lastMouseVars = "", mouseVarLogs = 0;
 let freshAsk: { id: string; tgui?: string; tguiSet?: string; tguiWatch?: string } | null = null; // the host asked for a fresh --tgui machine (topic-check --again --fresh), with the scenario's amount, set and watch values as they are now; the tick loop does it
 let onHot: ((m: HotMsg) => void) | null = null; // the host replaces game procs in the running world (tools/hot.mjs)
 export interface HotMsg { type: "hot"; id: string; fresh?: boolean; tgui?: string; tguiSet?: string; tguiWatch?: string; files: { file: string; js: string; firstId: number; paths: string[] }[] }
@@ -312,13 +308,12 @@ async function run(opts: StartMsg): Promise<void> {
 	const world = await loadWorld({ opts, log, secs, post, buildUrl, fetchJson, fetchPixels, fetchSnapshot, normPath, PIXEL_FILES, setOnHot: (f) => { onHot = f; }, setFreshAsk: (a) => { freshAsk = a; } });
 	opts = world.opts;
 	const { vm, tree, bundle, pixels, scenarioText, scenarioName, stage, snapNote, saveStore, startStore, fixIcons, fixAppIcons } = world;
-	let scenarioPlayer: ScriptPlayer | null = null, scenarioStart = -1;
+	let scenarioPlayer = null as ScriptPlayer | null, scenarioStart = -1; // set at the spawn (run-joins.ts, startScenario)
 	const joinJob = opts.join ?? "";
 	const playerKey = opts.playerKey ?? "LocalPlayer"; // multiplayer: the first player's key (tools/server.mjs passes the first connection's name)
 	// ?roundstart=1 (with join): connect in the lobby, set that job to High (the only job), click Ready and start the
 	// round at once. tg's DivideOccupations then gives the job and puts you on its station landmark.
 	const roundstartJoin = !!joinJob && !!opts.roundstart;
-	let savedJobPrefs: Record<string, Value> | null = null;
 	const wantGender = opts.gender || "male";
 	// without `join` the page is the real game: connect a player when init finishes and leave them in tg's lobby.
 	// ?nolobby=1 (the boot checks) keeps the old client-less boot; ?lobby=SECONDS shortens the pregame countdown.
@@ -333,12 +328,11 @@ async function run(opts: StartMsg): Promise<void> {
 	}
 
 	const ROUND_START_RE = /^Game start took [\d.]+s$/;
-	let afterStartLimit: number | null = null, lobbyPaced = false, spawned = false;
+	let afterStartLimit: number | null = null;
 	let roundStart: { ms: number; ticks: number; } | null = null;
 	let ticks = 0;
 	// Real-time pacing (after round start, or from the lobby join): see pace.ts.
 	const pace: Pace = { wall: 0, tick: 0 };
-	let autojoined = false;
 	let endRoundAt: number | null = null; // world.time to end the round at (-1: done)
 	vm.worldLog = (s: string) => {
 		log(s);
@@ -370,103 +364,22 @@ async function run(opts: StartMsg): Promise<void> {
 	const { live_, lateWakes, liveLine } = stats;
 
 	let fatal: unknown = null;
+	const wctx: WorldStartCtx = { opts, vm, tree, bundle, log, post, secs, stage, snapNote, startStore, saveStore, skinText, busyWait, ROUND_START_RE, heapMB, yieldNow, freeBytes, world, setTicks: (n) => { ticks = n; }, setInitDone: () => { initDone = true; }, summary: () => stats.summary(), get fatal() { return fatal; } };
 	try {
-		let snapLoaded = false;
-		const snapMapFile = (() => { // the snapshot's map file, from the _maps json of the map the snapshot was made for
-			try { const mj = bundle.files[`_maps/${opts.map}station.json`] ?? bundle.files[`_maps/${opts.map}.json`] ?? bundle.files["_maps/boxstation.json"]; return (JSON.parse(String(mj)) as { map_file?: string }).map_file ?? "BoxStation.dmm"; } catch { return "BoxStation.dmm"; }
-		})();
-		if (world.snapP) {
-			let snap: SnapFetch | null = await world.snapP;
-			world.snapP = null;
-			if (!("why" in snap) && !snapshotMapOk(world.storeFiles, snapMapFile)) snap = { why: `your saves pick another map for this round (data/next_map.json); the snapshot is ${opts.map || "Box Station"}` };
-			if ("why" in snap) {
-				snapNote(snap.why);
-				if (snap.noZstd) post({ type: "loadnote", text: "This browser can't unpack this build's quick station download (zstd: Safari can't yet), so the station is being set up from scratch, which takes about a minute. Firefox or Chrome start in seconds." });
-			}
-			else {
-				stage("Unpacking the station...");
-				await yieldNow(); // let the page show it
-				const rawMB = (snap.bytes.length / 1048576).toFixed(1), gzMB = (snap.gz / 1048576).toFixed(1), fetchS = (snap.ms / 1000).toFixed(1), snapHow = snap.how;
-				try {
-					const r = loadSnapshot(vm, snap.bytes);
-					freeBytes(snap.bytes);
-					snap = null;
-					snapLoaded = true;
-					const host = r.host as { log: string[]; ticks: number; wall: number };
-					ticks = host.ticks;
-					// the saved boot's log up to the lobby, so the combined log has every milestone. A mid-round snapshot's
-					// "Game start took" line goes through worldLog, so the worker knows the round has started (late join, pacing).
-					for (const l of host.log) if (ROUND_START_RE.test(l)) vm.worldLog(l); else log(l);
-					initDone = true;
-					const seed = opts.seed ?? Math.floor(Math.random() * 0x7fffffff);
-					const reset = resumeWorld(vm, seed);
-					if (skinText !== null) vm.clients.setSkin(skinText); // the saved world had no client, hence no skin
-					log(`[vm-boot] snapshot loaded (${gzMB} MB ${snapHow}, ${rawMB} MB raw, fetched and unpacked in ${fetchS} s; ${r.objects} objects in ${(r.ms / 1000).toFixed(1)} s) at ${secs()} s wall (the saved boot took ${host.wall.toFixed(1)} s to get here); world.time ${vm.sched.time}, tick ${vm.sched.tick}, ${vm.sched.sleeping} sleeping threads; RNG seed ${seed}; reset ${reset.join(", ") || "nothing"}; heap ${heapMB()} MB`);
-					post({ type: "milestone", name: "snapshot", s: Number(secs()) });
-					startStore(true); // after the load: the snapshot replaced the file layer
-					// Memory: free the load's garbage now, behind the loading screen. Without a GC here the first full GC came ~85 s in,
-					// at a ~0.9 GB higher peak. It used to let Firefox's worker go idle once (its idle GC, see tick-wait.ts), but that GC
-					// came 5 s later, just after a quick join's spawn: a ~0.9 s freeze. A big buffer that
-					// is never touched (no memory used) puts the malloc heap over its limit, so SpiderMonkey runs one ~0.5 s GC at once.
-					if (busyWait) try { new ArrayBuffer(512 * 1048576); } catch { /* no room: the GC comes later instead */ }
-				} catch (e) {
-					if (snap && !("why" in snap)) freeBytes(snap.bytes);
-					snap = null;
-					const msg = String((e as Error).message ?? e);
-					// These are thrown before loadSnapshot touches the VM: a normal boot can carry on in this worker.
-					if (/not a world snapshot|snapshot version|different build|unknown to this build/.test(msg)) snapNote(`the snapshot doesn't fit this build: ${msg}`);
-					else { // half loaded: only a fresh worker can boot now. The page reloads itself with ?nosnap=1.
-						const t = `[vm-boot] snapshot load failed part-way, reloading with ?nosnap=1: ${(e as Error).stack ?? e}`;
-						log(t); console.warn(t);
-						post({ type: "snapfail", error: msg });
-						return;
-					}
-				}
-			}
-		}
-		if (!snapLoaded) {
-			startStore(false);
-			log(`[vm-boot] global init + compiled maps + world/New at ${secs()} s${busyWait ? " (waits between ticks by busy-waiting: Firefox idle-GC workaround)" : ""}`);
-			const thread = vm.boot();
-			log(`[vm-boot] compile-time maps ${vm.mapReadMs < 0 ? "from the program's Maps" : `read from ${tree.json.MapFiles!.length} .dmm files in ${vm.mapReadMs.toFixed(0)} ms`}`);
-			log(`[vm-boot] world/New ${thread?.done ? "returned" : "is sleeping"} at ${secs()} s, world.time ${vm.sched.time}`);
-			post({ type: "milestone", name: "world-new", s: Number(secs()) });
-		}
+		if (await startWorld(wctx) === "snapfail") return;
 		let lastYield = Date.now();
-				let joinAt = Infinity, joinTick: number | null = null, genderClickAt = -1, lastPos = "", lastState = "";
-		// one record per connected player. Input names its player by ckey (none = the first); output is routed by the ckey the engine tags it with.
-		const players: Player[] = [];
-		const early = new Map<string, string[]>(); // text sent to a client while it connects, before its record exists
-		const addPlayer = (key: string, client: DMObject): Player => {
-			const differ = new ViewDiffer({ dirty: opts.dirty !== false }); // ?dirty=0: the old full scan every update
-			differ.logView = (m) => log(m);
-			differ.logAnim = (m) => log(`[vm-boot] anim ${m}`);
-			const p: Player = { ckey: stringify(client.getVar("ckey")), key, client, differ, outLines: early.get(stringify(client.getVar("ckey"))) ?? [], joined: false, views: 0, outCount: 0 };
-			players.push(p);
-			return p;
-		};
-		const playerOf = (ck?: string): Player | undefined => (ck ? players.find((p) => p.ckey === ck.toLowerCase().replace(/[^a-z0-9@]/g, "")) : players[0]);
-		const by = (ck?: string) => (ck ? ` by ${ck}` : ""); // the end of every per-input log line: whose input it was
-		const lateJoin: { P: Player; job: string; near?: boolean; at: number }[] = [];
-		let secondAt = -1, secondJoinTick = -1, secondP: Player | null = null, lastPlayersLog = Date.now(); // mp1 test aid (?second=KEY[&secondjob=JOB]): a second client
-		const firstC = (): DMObject => players[0]?.client as DMObject; // the test aids below act on the first player
-				const aids = makeTickAids({ opts, vm, log, post, firstC, players, get joinAt() { return joinAt; }, get ticks() { return ticks; }, get freshAsk() { return freshAsk; }, set freshAsk(v) { freshAsk = v; } });
-		// the first player's way in is joins.mode (joins.ts); isJoined: the first join is settled (in, or gone), so the world runs for players
-		const isJoined = () => joins.open;
-		/** The first player is refused or left before joining: later players come in, with real time and no held lobby. */
-		const firstGone = (why: string) => {
-			joins.firstGone(); joinTick = null;
-			if (lobbyMode || roundstartJoin) { lobbyPaced = true; pace.wall = Date.now(); pace.tick = vm.sched.tick; }
-			if (roundstartJoin) releaseLobby(vm);
-			log(`[vm-boot] first player ${playerKey} ${why}: later players come in without them, world.time ${vm.sched.time}`);
-		};
-		let lastCheck = 0;
+		const js = makeJoins({ opts, vm, log, post, secs, playerKey, joinJob, lobbyMode, roundstartJoin, wantGender, pace, scenarioText, joins: () => joins,
+			get ticks() { return ticks; }, get initDone() { return initDone; }, get roundStart() { return roundStart; },
+			startScenario: (mobPath) => { scenarioPlayer = new ScriptPlayer(vm, scenarioText!, log, scenarioName); scenarioStart = ticks + 1; log(`[scenario] ${scenarioName}: spawned as ${mobPath}, world.time ${vm.sched.time}, tick ${ticks}; script tick 0 = tick ${scenarioStart}`); } });
+		const { players, early, playerOf, by, firstC, isJoined } = js;
+		const aids = makeTickAids({ opts, vm, log, post, firstC, players, get joinAt() { return js.joinAt; }, get ticks() { return ticks; }, get freshAsk() { return freshAsk; }, set freshAsk(v) { freshAsk = v; } });
+		const vctx: ViewsCtx = { opts, vm, log, post, players, resyncRequested, fixIcons, fixAppIcons, live_, lastCheck: 0 };
 		let idle = false; // netcode 1: between ticks (the VM is not running anything), so a click can run at once
 		installInput({ opts, vm, log, post, inLog, cutAt, get logLevel() { return logLevel; }, players, early, playerOf, by, pixels, fetchPixels, normPath, fixAppIcons, resyncRequested, lateWakes, get joined() { return isJoined(); }, get idle() { return idle; } });
 		while (ticks < maxTicks && Date.now() < deadline() && !stopRequested) {
 			const due = vm.nextDue();
 			if (due === null) break;
-			if (roundStart !== null || lobbyPaced) {
+			if (roundStart !== null || js.lobbyPaced) {
 				// Wait until the due tick's wall time; more than CATCHUP_MAX_MS behind (a GC stall, a long tick) drops the
 				// lost time instead of running the missed ticks back to back (pace.ts).
 				const target = paceStep(pace, due, vm.sched.tickLag * 100);
@@ -496,7 +409,7 @@ async function run(opts: StartMsg): Promise<void> {
 				}
 				opts.ssoff = undefined;
 			}
-			if (opts.endround != null && joinAt !== Infinity) { // ?endround=N, N seconds after spawning, through tg's own path
+			if (opts.endround != null && js.joinAt !== Infinity) { // ?endround=N, N seconds after spawning, through tg's own path
 				if (endRoundAt === null) endRoundAt = vm.sched.time + opts.endround * 10;
 				else if (endRoundAt >= 0 && vm.sched.time >= endRoundAt) {
 					endRoundAt = -1;
@@ -513,167 +426,11 @@ async function run(opts: StartMsg): Promise<void> {
 			// the world is ready for the first player: read the messages that came during the boot first (the loop has not yielded since),
 			// so a player who left or came meanwhile is known before anyone is let in
 			if (joins.mode === "waiting" && (lobbyMode ? initDone : !!joinJob && (roundstartJoin ? initDone : roundStart !== null))) await new Promise((r) => setTimeout(r, 1));
-			if (lobbyMode && joins.mode === "waiting" && initDone) { // the player arrives in the lobby; real time runs from here
-				const fm = joins.firstArrives(), c = fm === "setup" ? vm.clients.connect(playerKey, { address: opts.playerAddress }) : null;
-				vm.animLog = [];
-				if (fm === "gone") firstGone("left before the world was ready");
-				else log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time} (lobby)`);
-				if (!c && fm === "setup") firstGone("was refused");
-				if (c) {
-					addPlayer(playerKey, c).joined = true;
-					joins.firstIn(); lobbyPaced = true; pace.wall = Date.now(); pace.tick = vm.sched.tick;
-					const gi = vm.tree.globalNames.indexOf("SSticker"), tk = gi >= 0 ? live(vm.globals[gi]) : null;
-					if (tk instanceof DMObject && opts.lobbySeconds) { tk.setVar("start_at", vm.sched.time + opts.lobbySeconds * 10); if (tk.getVar("timeLeft") != null) tk.setVar("timeLeft", opts.lobbySeconds * 10); }
-					post({ type: "milestone", name: "lobby", s: Number(secs()) });
-				}
-			}
-			if (opts.autojoin && lobbyMode && joins.mode === "in" && !spawned && !autojoined && roundStart !== null && ticks >= (roundStart as { ticks: number }).ticks + 20) {
-				// Test aid: ?autojoin=JOB clicks the lobby's late-join link for JOB (the Topic the "Join Game!" window's job link sends)
-				autojoined = true;
-				const c = firstC();
-				if (c) { vm.clients.topic(c, `src=${refOf(c.getVar("mob"))};SelectedJob=${opts.autojoin}`); log(`[vm-boot] autojoin: late-join link for ${opts.autojoin} clicked at world.time ${vm.sched.time}`); }
-			}
-			if (joinJob && joins.mode === "waiting" && (roundstartJoin ? initDone : roundStart !== null)) {
-				const fm = joins.firstArrives(), c = fm === "setup" ? vm.clients.connect(playerKey, { address: opts.playerAddress }) : null;
-				vm.animLog = []; // record animate()/flick() from now on (the view differ drains it)
-				if (fm === "gone") firstGone("left before the world was ready");
-				else log(`[vm-boot] client ${playerKey} ${c ? `connected, mob ${(c.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-				if (c) { addPlayer(playerKey, c); joinTick = ticks + 20; if (roundstartJoin) holdLobby(vm); } // hold the lobby countdown until the player is Ready
-				else if (fm === "setup") firstGone("was refused");
-			}
-			if (joinTick !== null && ticks >= joinTick) {
-				const c = firstC();
-				const prefs = live(c.getVar("prefs"));
-				if (genderClickAt < 0 && prefs instanceof DMObject && prefs.getVar("gender") !== wantGender) {
-					genderClickAt = ticks;
-					vm.clients.topic(c, "_src_=prefs;preference=gender");
-					log(`[vm-boot] gender link clicked: now ${String(prefs.getVar("gender"))}`);
-				}
-				// the gender click's ShowChoices can sleep in CHECK_TICK (update_preview_icon). Joining
-				// before it finishes hard-deletes the new_player (mob/Destroy: QDEL_HINT_HARDDEL), so the resumed
-				// ShowChoices reads user.key on null. Wait for client/Topic to clear `inprefs` (at most 200 ticks).
-				if (genderClickAt >= 0 && isTruthy(c.getVar("inprefs")) && ticks < genderClickAt + 200) joinTick = ticks + 1;
-				else {
-					if (genderClickAt >= 0) log(`[vm-boot] gender topic finished after ${ticks - genderClickAt} ticks`);
-					joinTick = null;
-					if (roundstartJoin && prefs instanceof DMObject) {
-						savedJobPrefs = readyAtRoundStart(vm, c, joinJob); // the saved choices come back once you've spawned
-						log(`[vm-boot] ready as ${joinJob} (round start join) at ${secs()} s wall, world.time ${vm.sched.time}`);
-					} else {
-						joinAt = ticks;
-						vm.clients.topic(c, `src=${refOf(c.getVar("mob"))};SelectedJob=${joinJob}`);
-						const mob = live(c.getVar("mob"));
-						log(`[vm-boot] joined as ${joinJob}: mob ${mob instanceof DMObject ? mob.type.path : "null"} gender ${mob instanceof DMObject ? String(mob.getVar("gender")) : "?"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-						post({ type: "milestone", name: "joined", s: Number(secs()) });
-					}
-					joins.firstIn(); players[0]!.joined = true;
-				}
-			}
-			// Multiplayer: players that connect and leave while the round runs (tools/server.mjs sends connect / disconnect per WebSocket)
-			for (const ck of joins.takeCancelled()) { vm.clients.send(ck, { type: "disconnect" }); log(`[vm-boot] client ${ck} left before coming in: not connected`); }
-			for (const ck of joins.takeLeaving()) {
-				const P = players.find((x) => x.ckey === ck);
-				if (!P) continue;
-				const wasFirst = P === players[0] && joins.mode === "setup"; // left in the join wait
-				players.splice(players.indexOf(P), 1); vm.clients.drop(P.client); log(`[vm-boot] client ${P.key} disconnected (mob stays), ${players.length} players left`);
-				if (wasFirst) firstGone("left before joining");
-			}
-			for (const { key, job, near, address, ckey: ck } of joins.takeArrivals()) {
-				if (players.some((x) => x.ckey === ck)) { log(`[vm-boot] client ${key} refused: already connected`); continue; }
-				const c2 = vm.clients.connect(key, { address });
-				log(`[vm-boot] client ${key} ${c2 ? `connected, mob ${(c2.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-				// no job (server --lobby): stays in the lobby; a player back in their old body (client/New finds the mob with their key) doesn't join again
-				if (c2) { const P = addPlayer(key, c2), m = live(c2.getVar("mob")); P.joined = true; if (job && m instanceof DMObject && m.type.path === "/mob/dead/new_player") lateJoin.push({ P, job, near, at: ticks + 20 }); }
-			}
-			for (let i = lateJoin.length - 1; i >= 0; i--) { // the late-join link of tg's Join Game window, once the round runs
-				const { P, job, near, at } = lateJoin[i]!;
-				if (roundStart === null || ticks < at) continue;
-				lateJoin.splice(i, 1);
-				if (!players.includes(P)) continue;
-				vm.clients.topic(P.client, `src=${refOf(P.client.getVar("mob"))};SelectedJob=${job}`);
-				const mob = live(P.client.getVar("mob"));
-				if (near && mob instanceof DMObject && players[0] && players[0] !== P) { // test aid (server --spawn-near): put the new mob on the first player's tile
-					const fm = mob.type.procs.get("forceMove"), tl = live(vm.getField(live(players[0].client.getVar("mob")) as DMObject, "loc"));
-					if (fm && tl) vm.call(fm, [tl], mob, mob);
-				}
-				log(`[vm-boot] client ${P.key} late-joined as ${job}: mob ${mob instanceof DMObject ? mob.type.path : "null"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-			}
-			if (opts.second) { // mp1 test aid: ?second=KEY connects a second client 60 ticks after the first one joined, which late-joins as ?secondjob (default Assistant) 20 ticks later
-				if (isJoined() && secondAt < 0) secondAt = ticks + 60;
-				if (secondAt >= 0 && !secondP && ticks >= secondAt) {
-					const c2 = vm.clients.connect(opts.second);
-					log(`[vm-boot] second client ${opts.second} ${c2 ? `connected, mob ${(c2.getVar("mob") as DMObject | null)?.type?.path ?? "null"}` : "refused"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-					if (c2) { secondP = addPlayer(opts.second, c2); secondP.joined = true; secondJoinTick = ticks + 20; } else secondAt = Infinity;
-				}
-				if (secondP && secondJoinTick >= 0 && ticks >= secondJoinTick) {
-					secondJoinTick = -1;
-					const c2 = secondP.client, job = opts.secondJob ?? "Assistant";
-					vm.clients.topic(c2, `src=${refOf(c2.getVar("mob"))};SelectedJob=${job}`);
-					const mob2 = live(c2.getVar("mob"));
-					log(`[vm-boot] second client ${opts.second} late-joined as ${job}: mob ${mob2 instanceof DMObject ? mob2.type.path : "null"} at ${secs()} s wall, world.time ${vm.sched.time}`);
-				}
-				if (Date.now() - lastPlayersLog >= 5000) {
-					lastPlayersLog = Date.now();
-					log(`[vm-boot] players: ${players.map((p) => `${p.ckey} mob ${(live(p.client.getVar("mob")) as DMObject | null)?.type?.path ?? "null"} views ${p.views} output ${p.outCount}`).join(" | ")}`);
-				}
-			}
-			if (isJoined() && players.length && Object.keys(mouseSeen).length) { // what tg's client/MouseMove and MouseDrag stored (autoclick.dm), the first few changes
-				const cl = firstC(), mo = live(cl?.getVar("mouseObject")), ml = live(cl?.getVar("mouseLocation"));
-				const ms = `mouseParams ${stringify(cl?.getVar("mouseParams"))} mouseObject ${mo instanceof DMObject ? mo.type.path : "-"} mouseLocation ${ml instanceof DMObject ? ml.type.path : "-"}`;
-				if (ms !== lastMouseVars && mouseVarLogs++ < 8) log(`[vm-boot] client ${(lastMouseVars = ms)}, world.time ${vm.sched.time}`);
-			}
-			if (isJoined()) {
-				// Where the player is, whenever it changes (the walking check reads these lines).
-				const mob = live(firstC()?.getVar("mob"));
-				if ((lobbyMode || roundstartJoin) && !spawned && mob instanceof DMObject && !mob.type.path.includes("new_player")) {
-					spawned = true; joinAt = ticks; post({ type: "milestone", name: "joined", s: Number(secs()) }); log(`[vm-boot] spawned: mob ${mob.type.path} at ${secs()} s wall, world.time ${vm.sched.time}`);
-					if (savedJobPrefs) { restoreJobPrefs(firstC(), savedJobPrefs); savedJobPrefs = null; }
-					if (scenarioText) { scenarioPlayer = new ScriptPlayer(vm, scenarioText, log, scenarioName); scenarioStart = ticks + 1; log(`[scenario] ${scenarioName}: spawned as ${mob.type.path}, world.time ${vm.sched.time}, tick ${ticks}; script tick 0 = tick ${scenarioStart}`); }
-				}
-				if (mob instanceof DMObject) {
-					const pos = `${vm.getField(mob, "x")},${vm.getField(mob, "y")},${vm.getField(mob, "z")} dir ${vm.getField(mob, "dir")}${live(vm.getField(mob, "buckled")) ? " buckled" : ""}`;
-					if (pos !== lastPos) log(`[vm-boot] player at ${(lastPos = pos)}, world.time ${vm.sched.time}`);
-					// intent and active hand, where a HUD click shows up.
-					const st = `a_intent ${String(vm.getField(mob, "a_intent"))}, active hand ${String(vm.getField(mob, "active_hand_index"))}${(() => { const h = live(mob.getVar("held_items")); return h instanceof DMList ? `, hands [${h.items.map((i) => { const o = live(i); return o instanceof DMObject ? stringify(o.getVar("name")) : "-"; }).join(", ")}]` : ""; })()}`;
-					if (st !== lastState) log(`[vm-boot] player state ${(lastState = st)}, world.time ${vm.sched.time}`);
-				}
-			}
+			js.step();
 			if (isJoined()) {
 				// the view's changes since the last tick (a full view first, and after a page resync).
 				aids.step(); // the per-tick test aids (tick-aids.ts)
-				const evs = vm.animLog ? vm.animLog.slice() : null; // each player's differ drains the animation log: give each the same events
-				for (const P of players) {
-				if (!P.joined) continue;
-				const ts = performance.now(); // per player: the live line's "view updates at X ms each" is one player's view
-				if (evs) { vm.animLog!.length = 0; for (const e of evs) if (!P.animSeen?.has(e)) vm.animLog!.push(e); }
-				P.animSeen = undefined;
-				const differ = P.differ, isFirst = P === players[0];
-				const rs = resyncRequested.has(P.ckey) || (isFirst && resyncRequested.has(""));
-				const update = differ.update(vm, rs, P.client);
-				if (update.full && update.seq > 1) log(`[vm-boot] full view resent (page resync) at world.time ${vm.sched.time}`);
-				resyncRequested.delete(P.ckey); if (isFirst) resyncRequested.delete("");
-				const first = update.seq === 1;
-				const rtUses = first && vm.runtimeIcons.size ? [...JSON.stringify(update.apps).matchAll(/"icon":"([^"]+)"/g)].map((m) => m[1]).filter((i) => vm.runtimeIcons.has(i)) : [];
-				if (vm.runtimeIcons.size) fixAppIcons(update.apps);
-				const tb = performance.now();
-				if (P.outLines.length) { post({ type: "output", player: P.ckey, lines: P.outLines }); P.outLines = []; }
-				post({ type: "view", player: P.ckey, update });
-				P.views++;
-				const tp = performance.now();
-				live_.snaps++;
-				live_.snapMs += tp - ts;
-				live_.buildMs += tb - ts;
-				live_.postMs += tp - tb;
-				if (live_.snaps % 20 === 1) live_.bytes += JSON.stringify(update).length * 20; // measurement only: 1 update in 20, scaled (the average stays meaningful)
-				if (opts.check && tp - lastCheck >= 2000) {
-					lastCheck = tp;
-					const view = buildClientView(vm);
-					if (vm.runtimeIcons.size) fixIcons(view as unknown as Record<string, unknown>);
-					post({ type: "viewcheck", view });
-				}
-				if (first)
-					log(`[vm-boot] first view update (full, ${update.apps.length} appearances, ${update.tiles.length} tiles): ${rtUses.length} runtime-built icon uses${update.icons ? `; ${update.icons.length} icon sheets on the z level listed for preload in ${zIconsMs} ms` : ""}${rtUses.length ? ` (${[...new Set(rtUses)].join(", ")}; sent as blob: .dmi URLs)` : ""}`);
-				}
+				sendViews(vctx);
 			}
 			if (roundStart !== null && Date.now() - live_.since >= 10000) liveLine();
 			idle = true; // until the next tick starts: the awaits below and in the pacing wait are where page input arrives
@@ -691,20 +448,5 @@ async function run(opts: StartMsg): Promise<void> {
 	post({ type: "milestone", name: "stopped", s: Number(secs()) });
 	if (roundStart !== null) liveLine();
 
-	const summary = stats.summary();
-	for (const s of summary) log(s);
-
-	const sendFiles = (dir: string): void => {
-		for (const name of vm.vfs.list(dir)) {
-			if (name.endsWith("/")) sendFiles(dir + name);
-			else post({ type: "file", path: dir + name, text: vm.vfs.readText(dir + name) ?? "" });
-		}
-	};
-	sendFiles("data/");
-	if (vm.rebootRequested && !fatal) { // the round-end saves (Ian, Poly, satchels...) must be in IndexedDB before the next world reads them
-		const t = Date.now();
-		await saveStore();
-		log(`[vm-boot] savefile store saved for the next world in ${Date.now() - t} ms`);
-		post({ type: "reboot", reason: vm.rebootRequested.reason, summary });
-	} else post({ type: "done", summary });
+	await stopWorld(wctx);
 }

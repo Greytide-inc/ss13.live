@@ -1,9 +1,7 @@
 // skin-to-html - Node script that parses `interface/skin.dmf` (BYOND's client window
 // layout: windows, panes, controls with pos/size/anchors) and generates a static mock-up page at
-// web/skin/index.html. Groundwork for the real skin ("skin.dmf rebuilt as HTML: map, output, statpanels,
-// input bar; winset/winget/output()") -- this is layout only, no game logic, no winset/winget
-// wiring. Every control keeps its DMF `id` as the generated element's `id`, so a later chunk can
-// wire winset("id.prop", value) straight to it.
+// web/skin/index.html. Layout only, no game logic: winset/winget work on the skin as data in
+// src/vm/skin.ts, not on this page. Every control keeps its DMF `id` as the generated element's `id`.
 //
 // Usage: npm run skin (regenerates web/skin/index.html; web/skin/skin.css is hand-written, not
 // generated, and is left alone).

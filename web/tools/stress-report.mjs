@@ -30,7 +30,7 @@ const key = (k) => { const m = k.split(" | dm@"); const dm = (m[1] ?? "").split(
 for (const [name, tab] of [["whole run", sum.losAll], ["slow ticks only", sum.losSlow]]) {
 	const rows = Object.entries(tab), n = rows.reduce((a, [, v]) => a + v[0], 0), t = rows.reduce((a, [, v]) => a + v[1], 0);
 	console.log(`== computeLos callers, ${name}: ${n} calls, ${t.toFixed(0)} ms in computeLos`);
-	for (const [k, v] of rows.sort((a, b) => b[1][1] - a[1][1]).slice(0, 6)) console.log(`   ${String(v[0]).padStart(6)} calls ${v[1].toFixed(1).padStart(8)} ms  ${k.startsWith("client-view") ? k : key(k)}`);
+	for (const [k, v] of rows.sort((a, b) => b[1][1] - a[1][1]).slice(0, 6)) console.log(`   ${String(v[0]).padStart(6)} calls ${v[1].toFixed(1).padStart(8)} ms  ${/^(client-view|view-sight)/.test(k) ? k : key(k)}`);
 }
 const pf = file + ".cpuprofile";
 if (existsSync(pf)) {

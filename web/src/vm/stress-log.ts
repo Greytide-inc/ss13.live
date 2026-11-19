@@ -58,7 +58,7 @@ export function stressNoteLos(ms: number, origin: string): void {
 		if (++held < STACK_EVERY) return;
 		n = held; ms = heldMs; held = 0; heldMs = 0;
 		const lines = (new Error().stack ?? "").split("\n").slice(3);
-		const native = lines.find((l) => /natives-world|clients\.js|world\.js.*rangeList|client-view/.test(l) && !/viewBox|losBox/.test(l));
+		const native = lines.find((l) => /natives-world|clients\.js|world\.js.*rangeList|client-view|view-sight|view-predict/.test(l) && !/viewBox|losBox/.test(l));
 		const dm = lines.filter((l) => l.includes("translated-tg")).slice(0, 2).map((l) => (/translated-tg\.js:(\d+)/.exec(l) ?? [])[1]);
 		key = `${(native ?? "?").trim().replace(/^at /, "").replace(/\(?file:\/\/[^)]*\//, "(").slice(0, 70)} | dm@${dm.join(",")}`;
 	}

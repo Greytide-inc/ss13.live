@@ -1,4 +1,4 @@
-// mech-turn: predicted mech steps on the page (u.predTurn, client-scene.ts). A key in a direction the mech doesn't face only turns it
+// mech-turn: predicted mech steps on the page (u.predTurn, live-move.ts). A key in a direction the mech doesn't face only turns it
 // (domove -> mechturn): drawn turned at once, not moved; the next key in that direction steps. The server finishing the turn (it moves
 // nothing) must not count as a refused step: the step drawn after it stays, and the server's move takes it over.
 import assert from "node:assert";

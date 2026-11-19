@@ -1,5 +1,5 @@
-// BYOND built-in procs implemented in TS, keyed by proc path. This is the small set the VM tests
-// need; the full catalogue is a later chunk. Behaviour measured in BYOND 511 through
+// BYOND built-in procs implemented in TS, keyed by proc path: the core set (scheduler, datum, lists, type checks,
+// text, maths); natives-text/io/world/misc.ts install the rest. Behaviour measured in BYOND 511 through
 // web/tests/dm/natives.dm and lists.dm unless marked "unverified".
 //
 // Natives get their arguments already bound (named args placed, padded with null to the declared

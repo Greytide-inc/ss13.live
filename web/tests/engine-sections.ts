@@ -4,7 +4,8 @@
 // `node build/dist/tests/engine-sections-ts.js`, which run.ts starts). They once also ran on the DM test program.
 
 import { VM } from "../src/vm/interpreter.js";
-import { ViewDiffer, eyeTileOf } from "../src/worker/client-view.js";
+import { ViewDiffer } from "../src/worker/client-view.js";
+import { eyeTileOf } from "../src/worker/view-sight.js";
 import type { BuiltAppearance } from "../src/appearance/appearance.js";
 import { DMAtom } from "../src/vm/world.js";
 import { DMList, DMObject, live } from "../src/vm/objects.js";

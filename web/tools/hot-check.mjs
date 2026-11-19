@@ -57,7 +57,7 @@ try {
 	let l = await speak("hot one");
 	check(/says, "hot one"/i.test(l), `before any swap, speech is tg's own: ${l}`);
 
-	const e1 = edited("code/game/say.ts", 'return fmt("＀, \\"＀\\"", [this.say_mod(', 'return fmt("＀ HOTSWAP, \\"＀\\"", [this.say_mod(');
+	const e1 = edited("code/game/say.ts", 'return `${this.say_mod(input, message_mode)}, "', 'return `${this.say_mod(input, message_mode)} HOTSWAP, "');
 	if (e1) {
 		const r = hot(e1);
 		check(r.code === 0 && /1 changed \(\/atom\/movable\/proc\/say_quote\)/.test(r.text), `a plain proc's new body is loaded (exit ${r.code}): ${r.text.slice(0, 200)}`);
@@ -76,9 +76,9 @@ try {
 		const r = hot(e3);
 		check(r.code === 2 && /needs a rebuild and restart/.test(r.text), `a file with a new var is refused (exit ${r.code}): ${r.text.slice(0, 160)}`);
 	}
-	const e4 = edited("code/game/say.ts", 'return fmt("＀, \\"＀\\"", [this.say_mod(', 'rt.callName(f, null, "hot_check_runtime", []); return fmt("＀, \\"＀\\"", [this.say_mod(');
+	const e4 = edited("code/game/say.ts", 'return `${this.say_mod(input, message_mode)}, "', 'rt.callName(f, null, "hot_check_runtime", []); return `${this.say_mod(input, message_mode)}, "');
 	if (e4) {
-		const r = hot(e4), line = fs.readFileSync("game/code/game/say.ts", "utf8").split("\n").findIndex((x) => x.includes('return fmt("＀, \\"＀\\"", [this.say_mod(')) + 1;
+		const r = hot(e4), line = fs.readFileSync("game/code/game/say.ts", "utf8").split("\n").findIndex((x) => x.includes('return `${this.say_mod(input, message_mode)}, "')) + 1;
 		await speak("hot oops");
 		await sleep(500);
 		const err = fs.readFileSync(logFile, "utf8").split("\n").filter((x) => /hot_check_runtime/.test(x));

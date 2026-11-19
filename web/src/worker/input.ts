@@ -1,7 +1,8 @@
 // input - what the page's input messages do in the boot worker (key, step, click, menu, mouse, command, topic, ...), moved out of run().
 // installInput(ctx) assigns the on* handlers below (self.onmessage in boot-worker.ts calls them) and vm.clients.onMessage.
 
-import type { VM, AnimEvent } from "../vm/interpreter.js";
+import type { VM } from "../vm/interpreter.js";
+import type { AnimEvent } from "../vm/animate.js";
 import { DMList, DMObject, live } from "../vm/objects.js";
 import { refTable } from "../vm/refs.js";
 import { heap } from "../vm/gc.js";

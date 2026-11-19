@@ -51,7 +51,9 @@ import { DMAtom, Kind } from "../vm/world.js";
 import { refOf } from "../vm/refs.js";
 import { stringify } from "../vm/value.js";
 import type { VM } from "../vm/interpreter.js";
-import { carriedLightOf, clientSeen, pickOf, popInSight, predMover, predOf, predTurnOf, putOf, swapOf, unionExtra, ViewDiffer, type UnionAt } from "./client-view.js";
+import { ViewDiffer } from "./client-view.js";
+import { carriedLightOf, pickOf, predMover, predOf, predTurnOf, putOf, swapOf } from "./view-predict.js";
+import { clientSeen, popInSight, unionExtra, type UnionAt } from "./view-sight.js";
 import { lessLight, parseLight } from "../render/carried-light.js";
 import { shadowStrength, type Opq } from "../render/sight-shadow.js";
 

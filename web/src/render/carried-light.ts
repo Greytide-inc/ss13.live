@@ -1,4 +1,4 @@
-// Carried light (client-scene.ts): the light a mob carries (a flashlight in hand) drawn where the page draws the mob, not a ping late.
+// Carried light (live-light.ts): the light a mob carries (a flashlight in hand) drawn where the page draws the mob, not a ping late.
 // The server sends the mob's light sources (power, range, colour), which corners they light and what each of those shows without them
 // (client-view.ts carriedLightOf). The page puts the last into the server's lighting tiles (lessLight) and draws the light as lighting
 // tiles of its own that stay put in the world: walls cut the light off per tile, so a shape that slid with the mob lit wall corners mid-step

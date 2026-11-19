@@ -28,11 +28,13 @@ import {
 	ScreenList,
 	releaseRefs,
 	ROOT_SHAPE,
-	assocValues,
 	taggedDatums,
 	FieldIC,
 } from "./objects.js";
-import { decRef, GCFlag, GCNode, heap, incRef, markOf, pin, PERMANENT_RC, setMark } from "./gc.js";
+import { decRef, GCFlag, GCNode, heap, incRef, pin, PERMANENT_RC } from "./gc.js";
+import { Collector } from "./collector.js";
+import { initAtomNow, loadCompiledMaps } from "./map-load.js";
+import { animate, type AnimEvent } from "./animate.js";
 import { installNatives } from "./natives.js";
 import { installWorldNatives } from "./natives-world.js";
 import { installIoNatives, WorldLogOut } from "./natives-io.js";
@@ -41,7 +43,6 @@ import { installMiscNatives } from "./natives-misc.js";
 import { Random } from "./random.js";
 import { forgetRef, fromRef, refOf } from "./refs.js";
 import { Vfs } from "../vfs/vfs.js";
-import { parseDmms, type CompiledMap } from "./dmm.js";
 import { ProcAttr } from "./json.js";
 import { Scheduler, Thread, realTime, timeOfDay } from "./scheduler.js";
 import { diffHook } from "./clockhook.js";
@@ -350,7 +351,7 @@ export class VM {
 	/** Connected players and everything sent to them (vm/clients.ts). */
 	readonly clients: Clients;
 	/** Active walk()/walk_to() walkers, in the order they were started. */
-	private readonly walkers = new Map<DMAtom, { next: number; period: number; step: (ref: DMAtom) => void }>();
+	readonly walkers = new Map<DMAtom, { next: number; period: number; step: (ref: DMAtom) => void }>();
 	private readonly kinds = new Map<DMType, Kind | 0>();
 	private readonly kindRoots: [DMType | undefined, Kind][];
 	/** Set while /world/Error runs: an error inside it is logged normally instead of recursing. */
@@ -550,109 +551,14 @@ export class VM {
 	/** How long compiledMaps() took to read the .dmm files (for the boot log); -1 when they came from the JSON. */
 	mapReadMs = -1;
 
-	/** The compile-time maps: the .dmm files web/game/_maps.ts lists (read from the vfs), or the JSON's Maps (--json-types, tests). */
-	compiledMaps(): CompiledMap[] {
-		const files = this.tree.json.MapFiles?.map((f) => this.compiledMapSwaps?.[f] ?? f);
-		if (!files) return (this.tree.json.Maps ?? []) as CompiledMap[];
-		const t0 = performance.now();
-		const maps = parseDmms(files, (f) => this.vfs.readText(f), (p) => this.tree.getType(p));
-		this.mapReadMs = performance.now() - t0;
-		return maps;
-	}
-
-	/**
-	 * Builds the compile-time maps (the .dmm files the program #includes), as BYOND does before world/New().
-	 * Checked only on the tests' 5x5 map of /turf in /area: the order BYOND
-	 * creates map atoms and calls New() in, and var overrides, are unverified (the map-loading chunk).
-	 */
+	/** Builds the compile-time maps before world/New() (map-load.ts). */
 	loadCompiledMaps(): void {
-		const maps = this.compiledMaps();
-		if (maps.length === 0) return;
-		let mx = 0, my = 0, mz = 0;
-		for (const m of maps) {
-			mx = Math.max(mx, m.MaxX);
-			my = Math.max(my, m.MaxY);
-			mz = Math.max(mz, m.MaxZ);
-		}
-		const world = this.world;
-		if (world) {
-			// Unverified: world.maxx/maxy set in the /world type are a minimum size.
-			mx = Math.max(mx, Number(world.getVar("maxx")) || 0);
-			my = Math.max(my, Number(world.getVar("maxy")) || 0);
-		}
-		const created = this.map.resize(mx, my, mz, false);
-		const objects: [DMType, Record<string, unknown> | undefined, DMAtom, number][] = [];
-		const turfOverrides = new Map<DMAtom, Record<string, unknown>>();
-		for (const m of maps) {
-			for (const block of m.Blocks) {
-				let bx = 1, by = 1;
-				for (const cellName of block.Cells) {
-					const cell = m.CellDefinitions[cellName];
-					const turf = this.map.turfAt(block.X + bx - 1, block.Y + block.Height - by, block.Z);
-					if (cell && turf) {
-						if (cell.Area && this.tree.types[cell.Area.Type]) this.map.setArea(turf, this.map.areaFor(this.tree.types[cell.Area.Type]));
-						if (cell.Turf && this.tree.types[cell.Turf.Type]) {
-							turf.type = this.tree.types[cell.Turf.Type];
-							turf.clearVars();
-							this.resetVars(turf);
-							if (cell.Turf.VarOverrides) turfOverrides.set(turf, cell.Turf.VarOverrides);
-						}
-						const key = turf.x - 1 + (turf.y - 1) * mx + (turf.z - 1) * mx * my;
-						for (const o of cell.Objects ?? []) if (this.tree.types[o.Type]) objects.push([this.tree.types[o.Type], o.VarOverrides, turf, key]);
-					}
-					if (++bx > block.Width) {
-						bx = 1;
-						by++;
-					}
-				}
-			}
-		}
-		// Measured in BYOND 511 (probe `ord`): turfs' New() run from the last turf back
-		// (z, y, x all descending), then objects in z, y, x ascending order, each tile's in map order.
-		for (let i = created.length - 1; i >= 0; i--) this.initAtomNow(created[i], [], turfOverrides.get(created[i]));
-		objects.sort((p, q) => p[3] - q[3]); // stable: keeps each tile's own order
-		for (const [type, ov, turf] of objects) {
-			const a = this.allocObject(type);
-			if (!(a instanceof DMAtom)) continue;
-			this.map.setLoc(a, turf);
-			this.initAtomNow(a, [turf], ov);
-		}
+		loadCompiledMaps(this);
 	}
 
-	private applyOverrides(a: DMObject, ov: Record<string, unknown> | undefined): void {
-		if (!ov) return;
-		for (const [k, v] of Object.entries(ov)) {
-			const val = this.tree.convertValue(v as never);
-			const x = val instanceof ListLiteral ? this.materialize(val) : val;
-			a.setVar(k, a instanceof DMAtom && (a.isMovable || k[0] !== "s") && LOOK_VARS.has(k) ? normLookVar(k, x)! : x);
-		}
-	}
-
-	/**
-	 * Runs an atom's (init) proc and New(args) to completion (a nested thread if it sleeps).
-	 * `overrides` (compile-time map var edits) go in between, as BYOND does (measured
-	 * probe `ov`): applied before (init), they were lost when (init) rebuilt a list default.
-	 */
-	private initAtomNow(a: DMAtom, args: Value[], overrides?: Record<string, unknown>): void {
-		if (overrides) {
-			if (a.type.initProc) {
-				// (init) only evaluates var defaults; it isn't expected to sleep.
-				const t0 = new Thread();
-				this.enter(t0, a.type.initProc, [], a, null);
-				this.run(t0);
-			}
-			this.applyOverrides(a, overrides);
-			const thread = new Thread();
-			const newProc = a.type.procs.get("New");
-			if (newProc && !newProc.isNative) this.enter(thread, newProc, args, a, null);
-			if (thread.frames.length) this.run(thread);
-			return;
-		}
-		const thread = new Thread();
-		const newProc = a.type.procs.get("New");
-		if (newProc && !newProc.isNative) this.enter(thread, newProc, args, a, null);
-		if (a.type.initProc) this.enter(thread, a.type.initProc, [], a, null);
-		if (thread.frames.length) this.run(thread);
+	/** Runs an atom's (init) proc and New(args) to completion (map-load.ts). */
+	initAtomNow(a: DMAtom, args: Value[], overrides?: Record<string, unknown>): void {
+		initAtomNow(this, a, args, overrides);
 	}
 
 	/** Runs the compiler-generated global initialiser (var/global x = expr). */
@@ -929,7 +835,7 @@ export class VM {
 	}
 	/** Whether objects of type t run a Del() of their own when freed (VM.delProcOf). */
 	hasUserDel(t: DMType): boolean {
-		return this.delProcOf(t) !== null;
+		return this.gc.delProcOf(t) !== null;
 	}
 
 	/** `initial(owner.key)` (Op.Initial). */
@@ -1015,7 +921,7 @@ export class VM {
 	 * Only the first frame of a thread gets a value back: a frame entered above another (VM.newObject's (init) above New())
 	 * returns into nothing (VM.deliver).
 	 */
-	private enter(thread: Thread, proc: DMProc, args: Value[], src: Value, usr: Value): Value | undefined {
+	enter(thread: Thread, proc: DMProc, args: Value[], src: Value, usr: Value): Value | undefined {
 		if (proc.isNative) {
 			// Natives see exactly what was passed (not padded): Add() with no args must add nothing.
 			const fn = this.natives.get(proc.path);
@@ -1070,7 +976,7 @@ export class VM {
 		// `pinned` is a connected client: never freed, and its Del() is never run by a free, so it must not turn on delWatch
 		// (that makes every proc return scan its locals for Del candidates, ~2% of a game tick once anyone has joined)
 		if (pinned || kind === Kind.Turf || kind === Kind.Area || type.path === "/world") pin(o); // never freed
-		else if (!this.delWatch && this.delProcOf(type) !== null) this.delWatch = true;
+		else if (!this.delWatch && this.gc.delProcOf(type) !== null) this.delWatch = true;
 		this.resetVars(o);
 		if (kind) this.map.addAtom(o as DMAtom);
 		return o;
@@ -1080,7 +986,7 @@ export class VM {
 	 * Gives an object its type's defaults: own copies of list vars and, for atoms with no name set, the
 	 * name BYOND derives from the type path (measured: /obj/wt_thing is "wt thing").
 	 */
-	private resetVars(o: DMObject): void {
+	resetVars(o: DMObject): void {
 		const look = o instanceof DMAtom || o.type.lookVars;
 		for (const k of o.type.listLiteralVars) {
 			const l = this.materialize(o.type.vars.get(k) as ListLiteral);
@@ -1096,8 +1002,8 @@ export class VM {
 			t.lookFix = [];
 			for (const k of LOOK_VARS) {
 				const v = t.vars.get(k);
-				// A null default is left alone: DMStandard's step_x/step_y are null on /atom where BYOND has
-				// 0 on /atom/movable only (a vars/initial() difference, left for a later chunk).
+				// A null default is left alone: DMStandard's step_x/step_y are null on /atom. BYOND has them
+				// only on /atom/movable, as 0; the constructor's var fixup sets that for movables.
 				if (v === undefined || v === null || v instanceof ListLiteral) continue;
 				const nv = normLookVar(k, v)!;
 				if (nv !== v) t.lookFix.push([k, nv]);
@@ -1367,82 +1273,8 @@ export class VM {
 
 	private setFieldFull(owner: Value, name: string, v: Value): void {
 		if (heap.check && owner instanceof GCNode && owner.gcFlags & GCFlag.Collected) this.gcUseAfterFree(owner, `write .${name}`);
-		if (owner === this.world && owner !== null) {
-			// Measured: world.fps = 20 makes tick_lag 0.5, and tick_lag = 1 makes fps 10.
-			// Unverified: values <= 0, and writes to the read-only clock vars.
-			switch (name) {
-				case "tick_lag":
-					if (typeof v === "number" && v > 0) this.sched.tickLag = v;
-					return;
-				case "fps":
-					if (typeof v === "number" && v > 0) this.sched.tickLag = 10 / v;
-					return;
-				case "time": case "tick_usage": case "cpu": case "timeofday": case "realtime":
-					return;
-				case "log":
-					owner.setVar("log", v === this.worldLogOut ? null : v);
-					return;
-				// Measured: growing adds world.turf cells in world.area; shrinking drops cells.
-				case "maxx": this.map.resize(typeof v === "number" ? v : 0, this.map.maxy, this.map.maxz); return;
-				case "maxy": this.map.resize(this.map.maxx, typeof v === "number" ? v : 0, this.map.maxz); return;
-				case "maxz": this.map.resize(this.map.maxx, this.map.maxy, typeof v === "number" ? v : 0); return;
-			}
-		}
-		if (owner instanceof DMAtom && !owner.deleted) {
-			switch (name) {
-				case "loc":
-					// Measured: a direct loc write calls no Enter/Exit/Entered/Exited. Turfs and areas
-					// can't be moved this way (unverified: ignored).
-					if (owner.isMovable) this.map.setLoc(owner, isAtom(v) ? v : null);
-					return;
-				case "x": case "y": case "z": {
-					// Measured: on a movable, moves it to the turf at the new coordinates (a 0 coordinate
-					// counts as 1: an off-map obj with x set to 4 lands on (4,1,1)). Turfs: ignored.
-					// Measured (q6-area): on an area it's a runtime error.
-					if (owner.kind === Kind.Area) throw new DMRuntimeError(`Cannot write to atom.${name}.`);
-					if (!owner.isMovable || typeof v !== "number") return;
-					const [cx, cy, cz] = this.map.coords(owner);
-					const nx = name === "x" ? v : cx, ny = name === "y" ? v : cy, nz = name === "z" ? v : cz;
-					const t = this.map.turfAt(nx || 1, ny || 1, nz || 1);
-					if (t) this.map.setLoc(owner, t);
-					return;
-				}
-				case "key": case "ckey":
-					// Setting a mob's key moves the client with that key to it (vm/clients.ts).
-					if (owner.kind === Kind.Mob && this.clients.setMobKey(owner, name, v)) return;
-					break;
-				case "dir": {
-					// Measured: non-numbers are ignored, fractions truncate, above 255 clamps to 255. On objs
-					// and mobs 0 and below are ignored; turfs and areas accept 0 (negatives: unverified).
-					if (typeof v !== "number") return;
-					const d = Math.min(255, Math.trunc(v));
-					if (owner.isMovable ? d <= 0 : d < 0) return;
-					const same = owner.getVar("dir") === d;
-					owner.setVar("dir", d);
-					this.appearances.noteDirWrite(owner, same && owner.isMovable); // turfs: unverified
-					return;
-				}
-				case "contents": {
-					// Measured: the old contents leave (loc null) and the list's items move in, in order,
-					// with no Enter/Exit calls. null just empties it. The first item that isn't a movable
-					// atom stops it with "cannot append to list" (items before it have moved in).
-					// Areas (measured): turfs dropped this way are left with no area (loc null); turfs in
-					// the list move in. Unverified for areas: movables, and the non-atom error.
-					if (v !== null && !(v instanceof DMList)) throw new NotImplementedError(`contents = ${describe(v)}`);
-					const items = v === null ? [] : v.items.slice();
-					const area = owner.kind === Kind.Area;
-					if (area) for (const t of [...owner.areaTurfSet!]) this.map.clearArea(t);
-					for (const a of owner.contents.slice()) this.map.setLoc(a, null);
-					for (const x of items) {
-						const a = live(x);
-						if (area && a instanceof DMAtom && a.kind === Kind.Turf) this.map.setArea(a, owner);
-						else if (a instanceof DMAtom && a.isMovable) this.map.setLoc(a, owner);
-						else throw new DMRuntimeError("cannot append to list");
-					}
-					return;
-				}
-			}
-		}
+		if (owner === this.world && owner !== null && this.setWorldVar(owner, name, v)) return;
+		if (owner instanceof DMAtom && !owner.deleted && this.setAtomVar(owner, name, v)) return;
 		if (owner instanceof DMObject && !owner.deleted) {
 			if (owner.type === this.appearances.type) throw Appearances.readOnly(name);
 			if (owner.type.special?.set(owner, name, v)) return;
@@ -1486,6 +1318,88 @@ export class VM {
 		if (owner instanceof DMObject && owner.deleted) this.deletedUse(owner, `${name} =`);
 		if (owner === null || owner instanceof DMObject) throw new DMRuntimeError(`Cannot modify null.${name}.`);
 		throw new DMRuntimeError(`Cannot modify ${describe(owner)}.${name}.`); // unverified wording
+	}
+
+	/** setFieldFull for a var of the world object with its own effect (the clock, the log, the map size); false = an ordinary var. */
+	private setWorldVar(owner: DMObject, name: string, v: Value): boolean {
+		// Measured: world.fps = 20 makes tick_lag 0.5, and tick_lag = 1 makes fps 10.
+		// Unverified: values <= 0, and writes to the read-only clock vars.
+		switch (name) {
+			case "tick_lag":
+				if (typeof v === "number" && v > 0) this.sched.tickLag = v;
+				return true;
+			case "fps":
+				if (typeof v === "number" && v > 0) this.sched.tickLag = 10 / v;
+				return true;
+			case "time": case "tick_usage": case "cpu": case "timeofday": case "realtime":
+				return true;
+			case "log":
+				owner.setVar("log", v === this.worldLogOut ? null : v);
+				return true;
+			// Measured: growing adds world.turf cells in world.area; shrinking drops cells.
+			case "maxx": this.map.resize(typeof v === "number" ? v : 0, this.map.maxy, this.map.maxz); return true;
+			case "maxy": this.map.resize(this.map.maxx, typeof v === "number" ? v : 0, this.map.maxz); return true;
+			case "maxz": this.map.resize(this.map.maxx, this.map.maxy, typeof v === "number" ? v : 0); return true;
+		}
+		return false;
+	}
+
+	/** setFieldFull for an atom var with its own effect (moving it, its key, dir, contents); false = go on as for any object. */
+	private setAtomVar(owner: DMAtom, name: string, v: Value): boolean {
+		switch (name) {
+			case "loc":
+				// Measured: a direct loc write calls no Enter/Exit/Entered/Exited. Turfs and areas
+				// can't be moved this way (unverified: ignored).
+				if (owner.isMovable) this.map.setLoc(owner, isAtom(v) ? v : null);
+				return true;
+			case "x": case "y": case "z": {
+				// Measured: on a movable, moves it to the turf at the new coordinates (a 0 coordinate
+				// counts as 1: an off-map obj with x set to 4 lands on (4,1,1)). Turfs: ignored.
+				// Measured (q6-area): on an area it's a runtime error.
+				if (owner.kind === Kind.Area) throw new DMRuntimeError(`Cannot write to atom.${name}.`);
+				if (!owner.isMovable || typeof v !== "number") return true;
+				const [cx, cy, cz] = this.map.coords(owner);
+				const nx = name === "x" ? v : cx, ny = name === "y" ? v : cy, nz = name === "z" ? v : cz;
+				const t = this.map.turfAt(nx || 1, ny || 1, nz || 1);
+				if (t) this.map.setLoc(owner, t);
+				return true;
+			}
+			case "key": case "ckey":
+				// Setting a mob's key moves the client with that key to it (vm/clients.ts).
+				if (owner.kind === Kind.Mob && this.clients.setMobKey(owner, name, v)) return true;
+				break;
+			case "dir": {
+				// Measured: non-numbers are ignored, fractions truncate, above 255 clamps to 255. On objs
+				// and mobs 0 and below are ignored; turfs and areas accept 0 (negatives: unverified).
+				if (typeof v !== "number") return true;
+				const d = Math.min(255, Math.trunc(v));
+				if (owner.isMovable ? d <= 0 : d < 0) return true;
+				const same = owner.getVar("dir") === d;
+				owner.setVar("dir", d);
+				this.appearances.noteDirWrite(owner, same && owner.isMovable); // turfs: unverified
+				return true;
+			}
+			case "contents": {
+				// Measured: the old contents leave (loc null) and the list's items move in, in order,
+				// with no Enter/Exit calls. null just empties it. The first item that isn't a movable
+				// atom stops it with "cannot append to list" (items before it have moved in).
+				// Areas (measured): turfs dropped this way are left with no area (loc null); turfs in
+				// the list move in. Unverified for areas: movables, and the non-atom error.
+				if (v !== null && !(v instanceof DMList)) throw new NotImplementedError(`contents = ${describe(v)}`);
+				const items = v === null ? [] : v.items.slice();
+				const area = owner.kind === Kind.Area;
+				if (area) for (const t of [...owner.areaTurfSet!]) this.map.clearArea(t);
+				for (const a of owner.contents.slice()) this.map.setLoc(a, null);
+				for (const x of items) {
+					const a = live(x);
+					if (area && a instanceof DMAtom && a.kind === Kind.Turf) this.map.setArea(a, owner);
+					else if (a instanceof DMAtom && a.isMovable) this.map.setLoc(a, owner);
+					else throw new DMRuntimeError("cannot append to list");
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Reads `indexing[index]`. */
@@ -1619,13 +1533,13 @@ export class VM {
 		thread.done = true;
 		if (srcDeleted(standIn)) {
 			frames.pop();
-			if (this.delWatch && this.holdsDelCandidate(f)) this.gcSafePoint(thread.rootsKnown ? value : undefined);
+			if (this.delWatch && this.gc.holdsDelCandidate(f)) this.gcSafePoint(thread.rootsKnown ? value : undefined);
 			return (thread.result = standIn.dot);
 		}
-		if (this.delWatch && this.holdsDelCandidate(f)) this.gcSafePoint(undefined);
+		if (this.delWatch && this.gc.holdsDelCandidate(f)) this.gcSafePoint(undefined);
 		frames.pop();
 		standIn.dot = value;
-		if (this.delWatch && this.holdsDelCandidate(standIn)) this.gcSafePoint(thread.rootsKnown ? value : undefined);
+		if (this.delWatch && this.gc.holdsDelCandidate(standIn)) this.gcSafePoint(thread.rootsKnown ? value : undefined);
 		return (thread.result = value);
 	}
 
@@ -1942,217 +1856,23 @@ export class VM {
 
 	/** Threads currently executing (a native can start a nested one: newObject, call). */
 	readonly running: Thread[] = [];
-	private gcEpoch = 0;
-	/** Diff mode (diffHook.gcTickOnly): collect only at tick boundaries (runTick), so frees land on the same tick in every engine. */
+	/** The garbage collector (collector.ts). */
+	readonly gc: Collector = new Collector(this);
 	/** Collector stats for the boot log. */
-	readonly gcStats = { safePoints: 0, ms: 0, freed: 0 };
-	private readonly userDel = new Map<DMType, DMProc | null>();
-	/** Set once an object with a user-defined Del() exists (see holdsDelCandidate). */
+	readonly gcStats = this.gc.stats;
+	/** Set once an object with a user-defined Del() exists (see Collector.holdsDelCandidate). */
 	delWatch = false;
-	/**
-	 * frames of translated plain procs (translate/runtime.ts), which aren't on any thread. They are
-	 * GC roots like thread frames (their JS locals through Frame.vars). The runtime pushes and pops them.
-	 */
-	readonly extraFrames: Frame[] = [];
-	private readonly extraThread = { frames: this.extraFrames } as unknown as Thread;
+	/** Frames of translated plain procs, GC roots (Collector.extraFrames). */
+	readonly extraFrames: Frame[] = this.gc.extraFrames;
 
-	/** The Del() a freed object of this type runs, or null when it's only the built-in one. */
-	private delProcOf(t: DMType): DMProc | null {
-		let p = this.userDel.get(t);
-		if (p === undefined) {
-			const d = t.procs.get("Del");
-			p = d && !d.isNative && d.owner?.path !== "/datum" ? d : null;
-			this.userDel.set(t, p);
-		}
-		return p;
-	}
-
-	/**
-	 * A safe point: frees everything in the zero-count table that no proc frame refers to, and what
-	 * that frees in turn. `extra` holds values the caller has popped off the operand stack but still
-	 * uses. Does nothing while a native has started a nested thread (its JS locals can't be scanned).
-	 */
+	/** A safe point (Collector.safePoint): frees what nothing refers to any more. */
 	gcSafePoint(extra?: Value): void {
-		if (heap.zct.length === 0) return;
-		if (diffHook.gcTickOnly && !diffHook.atTick) return;
-		if (this.running.length > 1) for (let i = 1; i < this.running.length; i++) if (!this.running[i].rootsKnown) return;
-		if (heap.off) {
-			for (const n of heap.zct) n.gcFlags &= ~GCFlag.InZct;
-			heap.zct = [];
-			return;
-		}
-		const t0 = performance.now();
-		const epoch = (this.gcEpoch = (this.gcEpoch + 1) & 0x7ffffff) || (this.gcEpoch = 1);
-		const mark = (v: Value | GCNode): void => {
-			if (v instanceof GCNode) {
-				setMark(v, epoch);
-				if (v.gcFlags & GCFlag.View && v.viewTarget !== null) setMark(v.viewTarget, epoch);
-			}
-		};
-		const markFrames = (th: Thread): void => {
-			for (const f of th.frames) {
-				mark(f.src);
-				mark(f.usr);
-				mark(f.dot);
-				mark(f.lastDeref);
-				if (f.boundSrc !== undefined) mark(f.boundSrc);
-				for (const v of f.args) mark(v);
-				for (const v of f.locals) mark(v);
-				if (f.vars !== null) for (const v of f.vars()) mark(v);
-				if (f.resume !== undefined) mark(f.resume);
-				for (const en of f.enumerators) {
-					if (!(en instanceof ListEnumerator)) continue;
-					mark(en.list);
-					for (const v of en.collectable()) mark(v);
-				}
-			}
-		};
-		for (const th of this.running) markFrames(th);
-		for (const th of this.sched.sleepers()) markFrames(th);
-		if (this.extraFrames.length) markFrames(this.extraThread);
-		for (const a of this.walkers.keys()) mark(a);
-		if (extra !== undefined) mark(extra);
-
-		const keep: GCNode[] = [];
-		let roots = heap.zct;
-		heap.zct = [];
-		while (roots.length) {
-			const dels = this.freeFrom(roots, epoch, keep);
-			// Del() procs run after the pass, each then releasing its object's references. What that
-			// frees (and whatever the Del() procs made and dropped) is freed in the next pass. BYOND
-			// runs each Del() at once instead; only the order of Del() calls can differ.
-			for (const [o, del] of dels) {
-				this.call(del, [], o);
-				releaseRefs(o);
-			}
-			roots = heap.zct;
-			heap.zct = [];
-		}
-		heap.zct = keep;
-		this.gcStats.safePoints++;
-		this.gcStats.ms += performance.now() - t0;
+		this.gc.safePoint(extra);
 	}
 
-	/** Frees what in `roots` has no references and isn't marked, and the cascade. Returns the pending Del() calls. */
-	private freeFrom(roots: GCNode[], epoch: number, keep: GCNode[]): [DMObject, DMProc][] {
-		const dels: [DMObject, DMProc][] = [];
-		// Oldest first, and each one's cascade (depth first, parents before children) before the next.
-		const stack: GCNode[] = [];
-		for (const root of roots) {
-			root.gcFlags &= ~GCFlag.InZct;
-			stack.push(root);
-			while (stack.length) {
-				const o = stack.pop()!;
-				if (o.rc > 0 || o.gcFlags & GCFlag.Collected) continue;
-				if (markOf(o) === epoch) {
-					// A proc still refers to it: check again at the next safe point.
-					if (!(o.gcFlags & GCFlag.InZct)) {
-						o.gcFlags |= GCFlag.InZct;
-						keep.push(o);
-					}
-					continue;
-				}
-				o.gcFlags = (o.gcFlags & ~GCFlag.InZct) | GCFlag.Collected;
-				this.gcStats.freed++;
-				if (o instanceof DMObject) {
-					if (o instanceof DMAtom) this.map.removeAtom(o);
-					else if (o instanceof DMAppearance) this.appearances.forget(o);
-					forgetRef(o);
-					o.type.special?.free?.(o);
-					const del = o.deleted ? null : this.delProcOf(o.type);
-					if (del) {
-						// Del() runs before what it refers to is released, so it can still read its vars.
-						dels.push([o, del]);
-						continue;
-					}
-				} else forgetRef(o as DMList);
-				this.releaseInto(o, stack);
-			}
-		}
-		return dels;
-	}
-
-	/**
-	 * Debug check of the reference counts: walks everything reachable (globals, the map, tagged
-	 * objects, proc frames, the ZCT) and counts the heap references to each object. A count below
-	 * that is a missed incRef (the object could be freed while in use); above it is either a missed
-	 * decRef or references from unreachable objects (cycles), so only the first kind is an error.
-	 * Also reports reachable objects that were freed. Returns one line per problem type.
-	 */
+	/** Debug check of the reference counts (Collector.verify). */
 	gcVerify(): string[] {
-		const count = new Map<GCNode, number>();
-		const seen = new Set<GCNode>();
-		const todo: GCNode[] = [];
-		const visit = (v: Value | GCNode): void => {
-			if (!(v instanceof GCNode)) return;
-			if (v.gcFlags & GCFlag.View && v.viewTarget !== null) visit(v.viewTarget);
-			if (v.gcFlags & GCFlag.View) return;
-			if (!seen.has(v)) {
-				seen.add(v);
-				todo.push(v);
-			}
-		};
-		const edge = (v: Value | GCNode): void => {
-			if (!(v instanceof GCNode)) return;
-			let t: GCNode | null = v;
-			if (t.gcFlags & GCFlag.View) t = t.viewTarget;
-			if (t === null) return;
-			count.set(t, (count.get(t) ?? 0) + 1);
-			visit(t);
-		};
-		for (const v of this.globals) edge(v);
-		visit(this.world);
-		for (const a of this.map.atoms) visit(a);
-		for (const d of taggedDatums) visit(d);
-		for (const n of heap.zct) visit(n);
-		const frames = (th: Thread) => {
-			for (const f of th.frames) {
-				for (const v of [f.src, f.usr, f.dot, f.lastDeref, ...f.args, ...f.locals, f.resume ?? null, ...(f.vars?.() ?? [])]) visit(v);
-				for (const en of f.enumerators) if (en instanceof ListEnumerator) { visit(en.list); if (!en.world) for (const v of en.items) visit(v); }
-			}
-		};
-		for (const th of this.running) frames(th);
-		for (const th of this.sched.sleepers()) frames(th);
-		frames(this.extraThread);
-		while (todo.length) {
-			const n = todo.pop()!;
-			if (n.gcFlags & GCFlag.Released) continue; // deleted: its references were released
-			if (n instanceof DMObject) {
-				if (n.vals) for (const v of n.vals) edge(v);
-				if ((n.ownVar("tag") ?? null) !== null) count.set(n, (count.get(n) ?? 0) + 1);
-				if (n instanceof DMAtom) {
-					for (const c of n.contents) edge(c);
-					if (n.loc && n.isMovable) edge(n.loc);
-				}
-			} else if (n instanceof DMList) {
-				for (const v of n.items) edge(v);
-				if (n.assoc) for (const v of assocValues(n.assoc)) edge(v);
-			}
-		}
-		const problems = new Map<string, number>();
-		const note = (k: string) => problems.set(k, (problems.get(k) ?? 0) + 1);
-		const name = (n: GCNode) => (n instanceof DMObject ? n.type.path : "/list");
-		for (const n of seen) {
-			const rc = n.rc >= PERMANENT_RC ? n.rc - PERMANENT_RC : n.rc;
-			const c = count.get(n) ?? 0;
-			if (n.gcFlags & GCFlag.Collected && !(n instanceof DMObject && n.deleted)) note(`freed but reachable: ${name(n)}`);
-			if (n instanceof DMObject && n.deleted) continue;
-			if (rc < c) note(`count too low: ${name(n)}`);
-		}
-		return [...problems].map(([k, c]) => `${k} x${c}`);
-	}
-
-	/** Releases a freed object's references; those that reach 0 go on `stack` (children in order). */
-	private releaseInto(o: GCNode, stack: GCNode[]): void {
-		const before = heap.zct.length;
-		releaseRefs(o);
-		// releaseRefs queued what reached 0 on the ZCT; take them back to free them now.
-		const z = heap.zct; // in place (splice allocated an array each time)
-		for (let i = z.length - 1; i >= before; i--) {
-			z[i].gcFlags &= ~GCFlag.InZct;
-			stack.push(z[i]);
-		}
-		z.length = before;
+		return this.gc.verify();
 	}
 
 	/** Pops the top frame and hands `value` to whoever called it (VM.deliver). */
@@ -2160,26 +1880,12 @@ export class VM {
 		const f = thread.frames.pop()!;
 		this.deliver(thread, f, value);
 		// A translated proc's temporary thread (runtime.ts) hands its result to JS: keep that alive.
-		if (this.delWatch && this.holdsDelCandidate(f)) this.gcSafePoint(thread.rootsKnown && thread.frames.length === 0 ? value : undefined);
+		if (this.delWatch && this.gc.holdsDelCandidate(f)) this.gcSafePoint(thread.rootsKnown && thread.frames.length === 0 ? value : undefined);
 	}
 
 	/** finishFrame's release check for a frame that wasn't on a thread (a translated plain proc); `value` is its return value. */
 	frameReturned(f: Frame, value: Value): void {
-		if (this.delWatch && this.holdsDelCandidate(f)) this.gcSafePoint(value);
-	}
-
-	/**
-	 * Measured: BYOND frees what a proc was the last to refer to when it returns, and runs its Del()
-	 * then. Only a user-defined Del() can tell the difference from the next safe point, so this
-	 * checks just for objects that have one (tg defines none; the tests do).
-	 */
-	private holdsDelCandidate(f: Frame): boolean {
-		const c = (v: Value): boolean => v instanceof DMObject && v.rc === 0 && !(v.gcFlags & GCFlag.Collected) && this.delProcOf(v.type) !== null;
-		if (c(f.lastDeref) || c(f.src) || c(f.dot)) return true;
-		for (const v of f.locals) if (c(v)) return true;
-		if (f.vars !== null) for (const v of f.vars()) if (c(v)) return true;
-		for (const v of f.args) if (c(v)) return true;
-		return false;
+		if (this.delWatch && this.gc.holdsDelCandidate(f)) this.gcSafePoint(value);
 	}
 
 	/** Hands a finished (already removed) frame's `value` to whoever called it. */
@@ -2260,67 +1966,11 @@ export class VM {
 	animLog: AnimEvent[] | null = null;
 
 	/** The object the last animate() call named: a call with no object adds a step to it. */
-	private lastAnimated: Value = null;
+	lastAnimated: Value = null;
 
-	/**
-	 * animate(Object, var = value, ..., time, loop, easing, flags). each step is also recorded in animLog for the live page.
-	 * Measured: each call sets the object's vars to that step's values at once (the client does the
-	 * in-between), a call without an object applies to the last animated object, and animate(O) alone
-	 * leaves the vars as they are. It returns null.
-	 */
+	/** animate(Object, var = value, ..., time, loop, easing, flags) (animate.ts). */
 	animate(f: Frame, type: ArgsType, vals: Value[]): void {
-		const positional: Value[] = [];
-		const named: [string, Value][] = [];
-		if (type === ArgsType.FromStack) positional.push(...vals);
-		else if (type === ArgsType.FromStackKeyed) {
-			for (let i = 0; i < vals.length; i += 2) {
-				if (vals[i] === null) positional.push(vals[i + 1]);
-				else named.push([stringify(vals[i]), vals[i + 1]]);
-			}
-		} else if (type === ArgsType.FromArgumentList) {
-			const l = live(vals[vals.length - 1]);
-			if (l instanceof DMList) {
-				for (const x of l.items) {
-					const a = l.assocOf(x);
-					if (typeof x === "string" && a !== undefined) named.push([x, a]);
-					else positional.push(live(x));
-				}
-			}
-		} else if (type === ArgsType.FromProcArguments) positional.push(...f.args);
-		let target = positional.length > 0 ? positional[0] : null;
-		if (target !== null) this.lastAnimated = target;
-		else target = this.lastAnimated;
-		if (!(target instanceof DMObject) || target.deleted) return;
-		const log = this.animLog;
-		const vars: NonNullable<AnimEvent["vars"]> | null = log ? [] : null;
-		let time = 0, loop = 1, easing = 0, flags = 0;
-		for (const [k, v] of named) {
-			if (k === "time") { time = num(v); continue; }
-			if (k === "loop") { loop = num(v); continue; }
-			if (k === "easing") { easing = num(v); continue; }
-			if (k === "flags") { flags = num(v); continue; }
-			if (k === "delay") continue;
-			if (target.hasVar(k)) {
-				if (vars) vars.push([k, animSnap(live(target.getVar(k))), animSnap(live(v))]);
-				this.setField(target, k, v);
-			}
-		}
-		// pt-orbit: unnamed arguments after the object fill the time, loop, easing, flags slots that no name set, in that order
-		// (animate(src, transform = m, time = 5, -1) in SpinAnimation means loop -1; it was ignored, so a ghost's orbit circled once).
-		if (positional.length > 1) {
-			const slots: ("time" | "loop" | "easing" | "flags")[] = ["time", "loop", "easing", "flags"];
-			const named_ = new Set(named.map(([k]) => k));
-			let si = 0;
-			for (let pi = 1; pi < positional.length; pi++) {
-				while (si < slots.length && named_.has(slots[si])) si++;
-				if (si >= slots.length) break;
-				const v = num(positional[pi]);
-				if (slots[si] === "time") time = v; else if (slots[si] === "loop") loop = v; else if (slots[si] === "easing") easing = v; else flags = v;
-				si++;
-			}
-		}
-		// a step for the client. `fresh` = the call named the object (a new animation); else it chains onto the last one.
-		if (log && log.length < ANIM_LOG_MAX) log.push({ o: target, fresh: positional.length > 0, vars: vars!, time, loop, easing, flags });
+		animate(this, f, type, vals);
 	}
 
 	/**
@@ -2375,25 +2025,6 @@ export class VM {
 		}
 		throw new Error(`bad argument type ${type}`);
 	}
-}
-
-/** One client-side animation event, for the live view. */
-export interface AnimEvent {
-	o: DMObject;
-	/** flick: the icon_state to show once. */
-	flick?: string;
-	/** animate step: the call named its object (starts a new animation) rather than chaining; the vars it set as [name, before, after]; time in ds, loop, easing, flags as given. */
-	fresh?: boolean;
-	vars?: [string, Value | number[], Value | number[]][];
-	time?: number; loop?: number; easing?: number; flags?: number;
-}
-export const ANIM_LOG_MAX = 500;
-
-/** A var value as plain data for the client: matrices and color lists become number arrays (a snapshot, not a reference). */
-export function animSnap(v: Value): Value | number[] {
-	if (v instanceof DMObject) return v.hasVar("a") ? ["a", "b", "c", "d", "e", "f"].map((k, i) => { const x = live(v.getVar(k)); return typeof x === "number" ? x : i === 0 || i === 4 ? 1 : 0; }) : null;
-	if (v instanceof DMList) return v.items.map((x) => (typeof x === "number" ? x : 0));
-	return v;
 }
 
 // ---- primitive operators ----------------------------------------------------------------------

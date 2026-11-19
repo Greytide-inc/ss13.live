@@ -1,5 +1,5 @@
 // predict-hud - the page's own HUD predictions (netcode 2 and 3): toggles, intent, hand swap and thrown-item hiding, moved out of liveClientView.
-// makePredictHud(ctx) returns what liveClientView calls; movement prediction stays in client-scene.ts.
+// makePredictHud(ctx) returns what liveClientView calls; movement prediction is in live-move.ts.
 
 import type { BuiltAppearance } from "../appearance/appearance.js";
 import type { viewStats as ViewStats } from "./client-scene.js";

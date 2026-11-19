@@ -34,6 +34,7 @@ import { Clients } from "./clients.js";
 import { Dialogs } from "./dialogs.js";
 import { WorldLogOut } from "./natives-io.js";
 import { Random } from "./random.js";
+import { Collector } from "./collector.js";
 import { Vfs } from "../vfs/vfs.js";
 import { SaveDirList, SaveNode, SavedList, SavedObject, SaveState, savefileStates } from "./savefile.js";
 import { peekRef, refNext, refTable, restoreRef, setRefNext } from "./refs.js";
@@ -57,14 +58,14 @@ function programPrint(vm: VM): string {
 }
 /** Arrays up to this length are loaded at their exact size (see loadSnapshot). */
 const EXACT_ARRAY_MAX = 4096;
-const VERSION = 6; // 6 (dialogs): Clients keeps open dialogs in a Dialogs object (was a prompts Map + promptId); 5 (view-dirty): an OverlayList's 5th field is its owner, not Appearances; 4: no bytecode (Frame without code/pc/stack, no T_CODE/T_NOCODE values); DMObject vars as VarShape + vals (was a Map per object); 3 (mem3): gcFlags has AssocShared and Indexed (the mark moved up 2 bits), a list's search index is a side table
+const VERSION = 7; // 7 (vm-split): the collector's state is in a Collector object (vm.gc; was gcEpoch, userDel, extraThread on the VM); 6 (dialogs): Clients keeps open dialogs in a Dialogs object (was a prompts Map + promptId); 5 (view-dirty): an OverlayList's 5th field is its owner, not Appearances; 4: no bytecode (Frame without code/pc/stack, no T_CODE/T_NOCODE values); DMObject vars as VarShape + vals (was a Map per object); 3 (mem3): gcFlags has AssocShared and Indexed (the mark moved up 2 bits), a list's search index is a side table
 
 // Every class an object in the VM's state may have. Anything else is a blocker (the save names it).
 const CLASSES: Function[] = [
 	Object, DMObject, DMList, ArgsList, VarsList, ScreenList, DMAtom, ContentsList, AreaContentsList, GameMap,
 	DMAppearance, OverlayList, Appearances, Clients, Dialogs, WorldLogOut, Resource, ListLiteral, Thread, Scheduler, Frame, VM,
 	Random, Vfs, RangeEnumerator, ListEnumerator, VerbList, SaveNode, SavedObject, SavedList, SaveState, SaveDirList,
-	DMRuntimeError, VarShape,
+	DMRuntimeError, VarShape, Collector,
 ];
 const TYPED: Function[] = [Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Float32Array, Float64Array, Uint8ClampedArray];
 

@@ -1,4 +1,4 @@
-// put-down: predicted put-down on the page (predictPut, client-scene.ts). A click on a table the server listed in put takes the held item out of
+// put-down: predicted put-down on the page (predictPut, live-items.ts). A click on a table the server listed in put takes the held item out of
 // the hand slot and its in-hand sprite off the mob at once, and draws it on the table centred on the click, sliding there from the mob; the
 // server's copy landing a ping later carries on the same slide (its own slide isn't played again). A click the server refused puts it back
 // in the hand; the drop key puts it on the mob's tile.

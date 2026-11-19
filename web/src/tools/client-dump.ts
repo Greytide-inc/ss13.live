@@ -11,7 +11,7 @@ import { encodeDmi } from "../dmi/dmi-node.js";
 import { evalRecipe } from "../dmi/icon-ops.js";
 import { repoRoot } from "./repo-root.js";
 import type { VM } from "../vm/interpreter.js";
-import { buildClientView } from "../worker/client-view.js";
+import { buildClientView } from "../worker/client-view-dump.js";
 
 // The view itself is built by client-view.ts (browser-safe, shared with the worker).
 export function dumpClients(vm: VM, file: string): Record<string, unknown> {

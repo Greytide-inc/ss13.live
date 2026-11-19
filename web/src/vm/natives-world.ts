@@ -2,7 +2,8 @@
 // the built-in /world/Error. BYOND 511 behaviour measured in web/tests/dm/world.dm unless marked
 // "unverified". Natives get exactly the arguments passed (no DMStandard defaults).
 
-import { ANIM_LOG_MAX, type NativeProc, type VM } from "./interpreter.js";
+import type { NativeProc, VM } from "./interpreter.js";
+import { ANIM_LOG_MAX } from "./animate.js";
 import { DMList, DMObject, live } from "./objects.js";
 import { output } from "./natives-io.js";
 import { NotImplementedError, stringify, type Value } from "./value.js";

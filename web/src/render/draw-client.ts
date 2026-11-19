@@ -5,8 +5,8 @@
 //  - the 5x5 scene, each tile's atoms drawn in (plane, layer) order (appearance-dump.ts already
 //    sorted each tile's list, so this file just draws in the order given).
 //
-// Only the first animation frame is drawn (cells[dirIndex][0]) -- no animation timeline here yet,
-// that's the gallery's job (src/tools/gallery-client.ts) for now.
+// Only the first animation frame is drawn (cells[dirIndex][0]); the gallery
+// (src/tools/gallery-client.ts) plays animations.
 //
 // ?scene=station routes to station-client.ts instead -- the whole Box Station view, a
 // separate plain-canvas renderer (not PixiJS: see that file's header for why). ?scene=client
