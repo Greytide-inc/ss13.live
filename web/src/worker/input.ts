@@ -10,27 +10,10 @@ import { stringify } from "../vm/value.js";
 import type { ViewDiffer, ViewUpdate } from "./client-view.js";
 import { type IconImage, evalRecipe, recipePaths } from "../dmi/icon-ops.js";
 import { encodePng } from "../dmi/png.js";
-import type { StartMsg } from "./boot-worker.js";
+import type { StartMsg, ClickMsg, MenuMsg, MenuPickMsg, MouseMsg } from "./messages.js";
 import { linkCommandOk } from "./input-check.js";
 
-export type ClickMsg = { type: "click"; player?: string; id: number | null; x: number | null; y: number | null; dbl: boolean; control: string; params: string };
-export type MenuMsg = { type: "menu"; player?: string; one?: number; x: number; y: number; sx: number; sy: number; click: ClickMsg };
-export type MenuPickMsg = { type: "menupick"; player?: string; id: number; a: number; v: number };
-export type MouseMsg = {
-	type: "mouse";
-	player?: string;
-	proc: "MouseDown" | "MouseUp" | "MouseDrop" | "MouseDrag" | "MouseMove" | "MouseEntered" | "MouseExited" | "MouseWheel";
-	dx?: number;
-	dy?: number;
-	id: number | null;
-	x: number | null;
-	y: number | null;
-	over?: number | null;
-	ox?: number | null;
-	oy?: number | null;
-	control: string;
-	params: string;
-};
+
 export const mouseSeen: Record<string, number> = {};
 
 export let onKey: ((key: string, down: boolean, player?: string) => void) | null = null;

@@ -3,7 +3,7 @@
 import type { VM } from "../vm/interpreter.js";
 import { zIconsMs } from "./client-view.js";
 import { buildClientView } from "./client-view-dump.js";
-import type { StartMsg } from "./boot-worker.js";
+import type { StartMsg } from "./messages.js";
 import type { Player } from "./input.js";
 import type { makeRunStats } from "./run-stats.js";
 import type { loadWorld } from "./load-world.js";

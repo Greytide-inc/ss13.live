@@ -3,7 +3,7 @@
 
 import type { VM } from "../vm/interpreter.js";
 import type { DMObject } from "../vm/objects.js";
-import type { StartMsg } from "./boot-worker.js";
+import type { StartMsg } from "./messages.js";
 import { makeCrew, makeGoto, makeLie, makeRide, makeSetup, makeShake, makeShoot } from "./tick-aids-scenes.js";
 import { newTguiState, tguiFollow, tguiFresh, tguiOpen } from "./tick-aids-tgui.js";
 

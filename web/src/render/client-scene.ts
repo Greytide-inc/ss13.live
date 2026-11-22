@@ -15,7 +15,7 @@
 // A dump with no `viewTiles` (older dumps) falls back to a window cut out of
 // web/build/2g/station.json around FALLBACK_ANCHOR, and says so on the page.
 
-import { inherit } from "./inherit.js";
+import { inherit } from "../appearance/inherit.js";
 import type { Appearance, BuiltAppearance } from "../appearance/appearance.js";
 import { parseScreenLoc } from "./screen-loc.js";
 import { applyColorMatrix } from "./color-matrix.js";

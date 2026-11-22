@@ -6,7 +6,7 @@ import type { ObjectTree } from "../vm/objtree.js";
 import type { VfsBundle } from "../vfs/bundle-format.js";
 import { loadSnapshot, resumeWorld } from "../vm/snapshot.js";
 import { snapshotMapOk } from "../vm/persist-replay.js";
-import type { StartMsg, SnapFetch } from "./boot-worker.js";
+import type { StartMsg, SnapFetch } from "./messages.js";
 import type { loadWorld } from "./load-world.js";
 
 /** What run() shares with the start and the end. setTicks and setInitDone write run()'s variables; fatal reads one. */

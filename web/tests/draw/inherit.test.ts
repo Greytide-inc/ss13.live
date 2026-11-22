@@ -1,6 +1,6 @@
 // client-scene.ts inherit()/itemsOf: overlays follow the owner's static transform, alpha and color.
 import assert from "node:assert";
-import { inherit, blendOf } from "../../src/render/inherit.js";
+import { inherit, blendOf } from "../../src/appearance/inherit.js";
 
 const app = (o: Record<string, unknown> = {}) => ({ alpha: 255, color: null, transform: null, pixelX: 0, pixelY: 0, layer: 2, plane: 0, overlays: [], ...o }) as never as Parameters<typeof inherit>[0];
 const near = (a: number[], b: number[]) => a.forEach((v, i) => assert.ok(Math.abs(v - b[i]) < 1e-9, `${a} != ${b}`));
@@ -22,6 +22,7 @@ assert.equal(inherit(app({ flags: 2 }), par).color, null);
 assert.ok(inherit(app({ flags: 4 }), par).alpha === 255 && inherit(app({ flags: 4 }), par).color === "#f00");
 assert.ok(inherit(app({ flags: 8 }), par).transform === null && inherit(app({ flags: 8 }), par).alpha < 129);
 assert.equal(inherit(app(), app()).transform, null);
+assert.equal(inherit(app({ color: "#0f0" }), app({ color: "chartreuse" })).color, "#0f0"); // not hex (the VM never stores one): the overlay's own wins
 console.log("inherit: ok");
 {
 	const b = (n: number) => ({ blendMode: n }) as never as Parameters<typeof inherit>[0];

@@ -11,7 +11,7 @@ import { mouseSeen, type Player } from "./input.js";
 import { holdLobby, releaseLobby, readyAtRoundStart, restoreJobPrefs } from "./test-aids.js";
 import type { Joins } from "./joins.js";
 import type { Pace } from "./pace.js";
-import type { StartMsg } from "./boot-worker.js";
+import type { StartMsg } from "./messages.js";
 
 /** What run() shares with the joins. The getters read run()'s live variables; startScenario starts the scenario script at the spawn. */
 export interface JoinsCtx {

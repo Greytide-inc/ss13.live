@@ -57,7 +57,8 @@ import { startWorld, stopWorld, type WorldStartCtx } from "./world-start.js";
 import { makeJoins } from "./run-joins.js";
 import { sendViews, type ViewsCtx } from "./run-views.js";
 import { loadWorld } from "./load-world.js";
-import { installInput, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState, type ClickMsg, type MenuMsg, type MenuPickMsg, type MouseMsg } from "./input.js";
+import { installInput, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState } from "./input.js";
+import type { StartMsg, HotMsg, SnapFetch, ClickMsg, MenuMsg, MenuPickMsg, MouseMsg } from "./messages.js";
 import { Joins, ckeyOf } from "./joins.js";
 import { parseDmiBytes } from "../dmi/dmi-browser.js";
 import { decodePng, pngIdat } from "../dmi/png.js";
@@ -91,7 +92,6 @@ const normPath = (path: string) => path.replace(/\\/g, "/").replace(/^\.\//, "")
 // failure here means a normal boot. how: "zstd", "gzip" or the Content-Encoding the browser undid; gz: the bytes downloaded.
 // noZstd: the .zst came without its zstd label (a browser without zstd, e.g. Safari 18) and there's no .gz (ss13-deploy keeps the gzip
 // only for the newest live builds): the page tells the player why the start is slow.
-export type SnapFetch = { bytes: Uint8Array; gz: number; how: string; ms: number } | { why: string; noZstd?: boolean };
 // one snapshot per map. BoxStation (or no map) is world.snap.gz; another map is world-<short name>.snap.gz, "runtime" and
 // "RuntimeStation" both world-runtime (the same rule as snapNames in tools/snapshot-key.mjs).
 // ?snap=NAME: world-NAME.snap.gz instead, a snapshot tools/make-snapshot.mjs made (e.g. mid-round; pass its ?map= too).
@@ -149,50 +149,6 @@ async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?:
 	}
 }
 
-export interface StartMsg {
-	type: "start";
-	snapshot?: boolean;
-	ticks?: number;
-	seconds?: number;
-	afterStart?: number | null;
-	join?: string;
-	gender?: string;
-	check?: boolean;
-	dirty?: boolean;
-	lie?: boolean;
-	goto?: string;
-	seed?: number;
-	lobby?: boolean;
-	lobbySeconds?: number;
-	map?: string;
-	snap?: string;
-	autojoin?: string;
-	roundstart?: boolean;
-	endround?: number;
-	ssoff?: string;
-	setup?: string;
-	rounddelay?: number;
-	round?: number;
-	ride?: boolean;
-	shoot?: boolean;
-	shake?: boolean;
-	crew?: boolean;
-	tgui?: string;
-	tguiWatch?: string;
-	tguiSet?: string;
-	busyWait?: boolean;
-	hot?: boolean;
-	translated?: boolean;
-	fastAir?: boolean;
-	scenario?: { name: string; text?: string; error?: string };
-	stress?: boolean;
-	playerKey?: string;
-	playerAddress?: string;
-	second?: string;
-	secondJob?: string;
-	clickNow?: boolean;
-	log?: string;
-}
 
 const post = (m: unknown) => (self as unknown as Worker).postMessage(m);
 // Log level: quiet = no per-input lines; normal; chatty = every "to client:" line and no length cuts on them.
@@ -235,7 +191,6 @@ let stopRequested = false;
 const resyncRequested = new Set<string>(); // players asked for a full view ("" = the first player)
 let freshAsk: { id: string; tgui?: string; tguiSet?: string; tguiWatch?: string } | null = null; // the host asked for a fresh --tgui machine (topic-check --again --fresh), with the scenario's amount, set and watch values as they are now; the tick loop does it
 let onHot: ((m: HotMsg) => void) | null = null; // the host replaces game procs in the running world (tools/hot.mjs)
-export interface HotMsg { type: "hot"; id: string; fresh?: boolean; tgui?: string; tguiSet?: string; tguiWatch?: string; files: { file: string; js: string; firstId: number; paths: string[] }[] }
 let joins = new Joins("localplayer"); // who comes in and when (joins.ts): {type:"connect", key, job?} / {type:"disconnect", key}, run by the tick loop; a new one per start
 let inputAt: number | null = null; // when the oldest page input not yet run by a tick arrived (performance.now())
 type InMsg =

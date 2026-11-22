@@ -52,7 +52,7 @@ import { DMList, DMObject, live } from "../vm/objects.js";
 import { DMAppearance } from "../vm/appearances.js";
 import { Resource } from "../vm/objtree.js";
 import { SOUTH } from "../vm/world.js";
-import { inherit } from "../render/inherit.js";
+import { inherit } from "./inherit.js";
 import type { Value } from "../vm/value.js";
 
 export const FLOAT_LAYER = -1;
@@ -88,7 +88,7 @@ export interface Appearance {
 	pixelZ?: number;
 	invisibility: number;
 	blendMode: number;
-	/** appearance_flags, overlays/underlays only and only when non-zero (RESET_* are read by render/inherit.ts). */
+	/** appearance_flags, overlays/underlays only and only when non-zero (RESET_* are read by inherit.ts). */
 	flags?: number;
 	/** The small HTML-subset text BYOND draws on top of this layer's icon, or null if unset.
 	 *  Own value only, never inherited from the owner (same as color/alpha/transform -- see header

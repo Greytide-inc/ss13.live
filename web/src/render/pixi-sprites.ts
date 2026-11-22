@@ -9,7 +9,7 @@ import { drawMaptext, maptextBoxRect } from "./maptext.js";
 import { frameForState, isLighting, matrixTintedRect, TILE_PX, type LoadedIcon } from "./station-client.js";
 import { sameFit } from "./inc-place.js";
 import { icons, type DrawItem, type HudFit } from "./client-scene.js";
-import { blendOf } from "./inherit.js";
+import { blendOf } from "../appearance/inherit.js";
 import { buildAnimationSteps } from "../dmi/animation.js";
 import type { Appearance } from "../appearance/appearance.js";
 

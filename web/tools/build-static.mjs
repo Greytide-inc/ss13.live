@@ -84,7 +84,7 @@ sub("web/build/dist/src/render/draw-client.js", [['"/" + iconPath', '"./" + icon
 
 // Snapshot reuse: the saved world depends only on what runs up to the lobby: the game bundle, the type tree, the VFS bundle
 // (maps, config), the .dmi icons (the boot reads sizes, states and pixels from them) and the engine plus Node tools (everything
-// in src/ but render/ and worker/, which are page side, plus any render/ file the engine imports, e.g. render/inherit.js).
+// in src/ but render/ and worker/, which are page side, plus any render/ file the engine imports, e.g. render/split-sheets.js).
 // If none of those changed since the last snapshot (same content hash), the cached one is copied in (~1 s) instead of booting
 // again (~1 min). Page/worker/render/tgui edits keep it. `--fresh-snapshot` forces a new one.
 const snapCache = join(web, "build/snapshot-cache"), snapKey = snapshotKey(web);

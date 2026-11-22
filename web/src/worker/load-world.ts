@@ -15,7 +15,7 @@ import { encodeDmi } from "../dmi/png.js";
 import { type IconImage, evalRecipe } from "../dmi/icon-ops.js";
 import type { Appearance, BuiltAppearance } from "../appearance/appearance.js";
 import type { DmiState } from "../dmi/dmi.js";
-import type { StartMsg, HotMsg, SnapFetch } from "./boot-worker.js";
+import type { StartMsg, HotMsg, SnapFetch } from "./messages.js";
 
 /** What run() shares with the loading: the start message, and the helpers that live in boot-worker.ts (a value import from there would be a cycle). */
 export interface LoadWorldCtx {
